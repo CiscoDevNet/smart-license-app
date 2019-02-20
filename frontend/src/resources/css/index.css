@@ -1,0 +1,103 @@
+/*
+ * Copyright (c) 2019 Cisco and/or its affiliates.
+ * 
+ * This software is licensed to you under the terms of the Cisco Sample
+ * Code License, Version 1.1 (the "License"). You may obtain a copy of the
+ * License at
+ * 
+ *                https://developer.cisco.com/docs/licenses
+ * 
+ * All use of the material herein must be in accordance with the terms of
+ * the License. All rights not expressly granted by the License are
+ * reserved. Unless required by applicable law or agreed to separately in
+ * writing, software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied.
+ */
+
+body{
+    background-color: #F4F5F7;
+    font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif !important;
+}
+.infoSection{
+    display: grid;
+    padding: 20px;
+
+}
+
+.header{
+    display: grid;
+    color: #fff !important;
+    grid-template-columns: 2fr 6fr 2fr;
+    background: #364f87;
+    background: -webkit-linear-gradient(to right, #364f87, #22629f, #4b6799,
+    #364f87);
+    background: linear-gradient(to right,  #364f87, #22629f, #4b6799,
+    #364f87);
+    min-height: 75px;
+    padding: 10px;
+
+}
+
+.logo{
+    box-sizing: content-box !important;
+    display: flex;
+    height: 30.1px;
+    justify-content: center;
+    width: 57px;
+}
+
+.title{
+    font-size: 2em;
+    text-align: center;
+}
+
+.support{
+    text-align: end !important;
+    font-size: 10px;
+    color: #c2cee3;
+}
+
+
+.btn{
+    border-radius: 0px !important;
+}
+
+.header {
+    display: grid;
+    grid-template-columns: 2fr 6fr 2fr;
+    background: #364f87;
+    background: -webkit-linear-gradient(to right, #364f87, #4b6799, #22629f, #364f87);
+    background: linear-gradient(to right, #364f87, #4b6799, #22629f, #364f87);
+
+}
+
+.logo {
+    color: inherit;
+}
+
+.title {
+    color: white;
+    font-size: 28px;
+
+}
+
+.support {
+    color: inherit;
+}
+
+a {
+    cursor: pointer;
+}
+
+.help-block {
+    font-size: 12px;
+}
+
+footer.app-footer {
+    height: 20pt;
+    text-align: center;
+    font-size: 10pt;
+    font-variant: small-caps;
+    color: Gray;
+}

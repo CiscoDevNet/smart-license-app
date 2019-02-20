@@ -1,0 +1,2 @@
+ipaddr,username,password,sa_name,va_name,domain
+<ip address>,<device user>,<device password>,<cisco smart account name>,<virtual account name>,<smart account domain>

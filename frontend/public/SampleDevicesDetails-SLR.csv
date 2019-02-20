@@ -1,0 +1,2 @@
+"ipaddr","username","password","sa_name","va_name","domain","license","license_count","tftp_server_ip","tftp_server_path"
+"<ip address>","<device user>","<device password>","<cisco smart account name>","<virtual account name>","<smart account domain>","<optional: license entitlement tag>","<optional: license count>","<tftp server ip>","<tftp server file path>"
