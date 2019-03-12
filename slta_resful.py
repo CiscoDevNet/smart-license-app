@@ -32,12 +32,17 @@ from resources.slrrequestcode import slrrequestcode
 from resources.slrrequestinfo import slrrequestinfo
 from resources.slrcontactcssm import slrcontactcssm
 from resources.slrauthzswitch import slrauthzswitch
+import platform
+import config
 
 app = Flask(__name__, static_folder='frontend/build/static')
 CORS(app)
 app.config['JWT_EXPIRATION_DELTA'] = timedelta(days=30)
 app.secret_key = 'slta'
 api = Api(app)
+
+# Fetch system info
+config.OS_TYPE = platform.system().lower()
 
 # For frontend integration
 api.add_resource(Servereact, '/', defaults={'path': ''})

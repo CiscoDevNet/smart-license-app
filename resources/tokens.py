@@ -25,7 +25,6 @@ import os
 from distutils.version import StrictVersion
 import time
 from netmiko import ConnectHandler
-from platform import system
 from subprocess import call
 from models.tokens import TokensModel
 
@@ -107,12 +106,12 @@ class Tokens(Resource):
     @classmethod
     def universal_ping(cls, ip):
         # ping command count option as a function of OS
-        param = '-n' if system().lower() == 'windows' else '-c'
+        param = '-n' if config.OS_TYPE.lower() == 'windows' else '-c'
+        param_w = '-w' if config.OS_TYPE.lower() == 'windows' else '-W'
 
         # Build command
-        command = ['ping', param, '1', '-W', '1', ip]
+        command = ['ping', param, '1', param_w, '1', ip]
         return call(command) == 0
-
 
     @classmethod
     def check_verison(cls, device_ip, username, password):

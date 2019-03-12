@@ -21,6 +21,8 @@ from models.slr import slr
 from models.tokens import TokensModel
 import tftpy
 import secrets
+import config
+import tempfile
 
 accept = {"request": "accepted"}
 slr_req_tbl = "slr_request_code_tbl"
@@ -32,10 +34,14 @@ s_authc_fail = s_fail + "Authc fail"
 step = "step3"
 resp_status_started = "S4s"
 resp_status_complete = "S4c"
-dest_dir = "/tmp/"
 extension = ".txt"
 req_token_command = []
 req_token_command.append("end")
+
+if config.OS_TYPE == "windows":
+    dest_dir = tempfile.gettempdir() + "\\"
+else:
+    dest_dir = "/tmp/"
 
 
 class slrauthzswitch(Resource):
