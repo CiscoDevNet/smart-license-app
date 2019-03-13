@@ -41,9 +41,6 @@ app.config['JWT_EXPIRATION_DELTA'] = timedelta(days=30)
 app.secret_key = 'slta'
 api = Api(app)
 
-# Fetch system info
-config.OS_TYPE = platform.system().lower()
-
 # For frontend integration
 api.add_resource(Servereact, '/', defaults={'path': ''})
 api.add_resource(UserCco, '/authen')
@@ -66,4 +63,6 @@ api.add_resource(ServeFavicon, '/favicon.ico')
 if __name__ == '__main__':
     # first create tables
     create_sql_tables()
+    # Fetch system info
+    config.OS_TYPE = platform.system().lower()
     app.run(debug=True, host='0.0.0.0', ssl_context='adhoc', use_reloader=True)
