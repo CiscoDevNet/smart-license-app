@@ -15,5 +15,24 @@ The following are required to run the app:
 * Valid Smart Account (SA) and Virtual Account in CSSM (If you don't have, contact your Cisco Account Manager)
 * Access to Cisco MuleSoft API Server (Refer to Installation for more details)
 
-## Documentation
-For Installation and User Guide, refer to <a href="https://developer.cisco.com/pubhub/docs/1826/new" target="_blank">Cisco DevNet - Smart License Provisioning App</a>
+## Running the App  
+This application can be run on a mac OS, Linux or Windows.
+The following is required to run the app:
+ * Python3 environment
+ * NodeJS environment
+ * App Source Code
+
+User can use a script to automatically set up the environment, get the source code and run the app.
+
+If the user is a developer, prefers to setup the environments manually, follow the manual step-by-step installation.
+
+For more details, goto [Installation](docs/installation.md).  
+  
+## Using the App  
+Once the set up is complete and the app is running, user needs to use a browser to launch the app.
+
+To perform License Registration using the app, refer to [User Guide](docs/userguide.md).  
+  
+For Frequently Asked Questions - refer to [FAQ](docs/faq.md)
+
+
