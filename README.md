@@ -11,7 +11,7 @@ This app can automate Specific License Reservation (SLR) workflow for products d
   
 ## Prerequisite
 The following are required to run the app:
-* CCO/Cisco.com account (If you don't have,  <a href="https://idreg.cloudapps.cisco.com/idreg/guestRegistration.do" target="_blank">register</a>
+* CCO/Cisco.com account (If you don't have,  [register](https://idreg.cloudapps.cisco.com/idreg/guestRegistration.do))
 * Valid Smart Account (SA) and Virtual Account in CSSM (If you don't have, contact your Cisco Account Manager)
 * Access to Cisco MuleSoft API Server (Refer to Installation for more details)
 
