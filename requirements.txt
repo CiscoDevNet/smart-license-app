@@ -1,0 +1,14 @@
+Flask==1.0.2
+Flask-Cors==3.0.6
+Flask-JWT==0.3.2
+Flask-RESTful==0.3.6
+Flask-SQLAlchemy==2.3.2
+netmiko==2.3.0
+numpy==1.15.2
+pandas==0.23.4
+pyOpenSSL==18.0.0
+pyping==0.0.5
+PyYAML==3.13
+requests==2.19.1
+schema==0.6.8
+tftpy==0.8.0
