@@ -3,6 +3,7 @@
 This app can be installed on macOS, Linux and Windows operating systems. Installation instructions are given bellow for each operating systems.  
 
 [Client ID and Secret & Get access to API Server - For all platform](#client-id-and-secret-get-access-to-api-server-for-all-platform)  
+[Package Dependencies - For all platform](#package-dependencies---for-all-platform)  
 [Installation for macOS](#installation-for-macos)  
 [Installation for Linux](#installation-for-linux)  
 [Installation for Windows](#installation-for-windows)  
@@ -30,8 +31,61 @@ App connects to Cisco API Server to interact with Cisco Smart Software Managemen
         client_id: <client id from Mulesoft API Server application>
         client_secret: <client secret from Mulesoft API Server application>
     ```  
+  
+---  
+### Package Dependencies - For all platform
+The app has Python and React package dependencies, which are listed below:  
 
+### Python Packages
+  
+The following python packages are required for running the app:  
+ 1. Flask
+ 2. Flask-Cors
+ 3. Flask-JWT
+ 4. Flask-RESTful
+ 5. Flask-SQLAlchemy
+ 6. netmiko
+ 7. numpy
+ 8. pandas
+ 9. pyOpenSSL
+10. pyping
+11. pyYAML
+12. requests
+13. tftpy
+14. schema
+  
+These packages will be installed in 'Section IV' in each platform installation steps.
+  
 
+### React Packages
+  
+The following react/javascript packages are required for running the app UI:  
+
+ 1. axios
+ 2. bootstrap
+ 3. fetch-intercept
+ 4. file-saver
+ 5. font-awesome
+ 6. history
+ 7. jquery
+ 8. popper.js
+ 9. react
+10. react-bootstrap
+11. react-bootstrap4-modal
+12. react-dom
+13. react-redux
+14. react-router-dom
+15. react-scripts
+16. react-stepper-horizontal
+17. react-toastify
+18. react-tooltip
+19. react-ultimate-pagination-bootstrap-4
+20. redux
+21. redux-logger
+22. redux-thunk  
+
+These packages will be installed in 'Section V' in each platform installation steps.
+ 
 ---
 ## Installation for macOS
 
@@ -92,32 +146,9 @@ $ source sl_venv/bin/activate
 (sl_venv) smart_license $
 ```
 **NOTE: The (sl_venv) prefix to prompt in the last line indicates that newly created virtual environment is activated. All subsequently installed packages from this modified command prompt end up in the activated virtual environment. Virtual environment can be deactivated with command 'deactivate'.**
+  
 
 ### Section III
-**Install Packages**
-
-Now required packages can be installed for running Smart Licensing App.
-```sh
-(sl_venv) smart_license $ pip3 install Flask
-```
-In a similar way, install following packages:
-
- 1. Flask
- 2. Flask-Cors
- 3. Flask-JWT
- 4. Flask-RESTful
- 5. Flask-SQLAlchemy
- 6. netmiko
- 7. numpy
- 8. pandas
- 9. pyOpenSSL
-10. pyping
-11. pyYAML
-12. requests
-13. tftpy
-14. schema
-
-### Section IV
 
 **App source code**
 
@@ -135,6 +166,15 @@ Install Git on MAC (If Git is already installed, skip steps shown below and go t
 ```sh
 (sl_venv) smart_license $ git clone https://github.com/CiscoDevNet/smart-license-app.git
 ```
+### Section III
+**Install Python Packages**
+
+Now required pyhton packages can be installed for running Smart Licensing App.
+```sh
+(sl_venv) smart_license $ cd smart-license-app
+(sl_venv) smart-license-app $ pip3 install -r requirements.txt
+```
+
 ### Section V
 
 **Build UI code**
@@ -265,34 +305,9 @@ $ source sl_venv/bin/activate
 (sl_venv) smart_license $
 ```
 **NOTE: The (sl_venv) prefix to prompt in the last line indicates that newly created virtual environment is activated. All subsequently installed packages from this modified command prompt end up in the activated virtual environment. Virtual environment can be deactivated with command 'deactivate'.**
+  
 
 ### Section III
-
-**Install Packages**
-
-Now required packages can be installed for running Smart Licensing App.
-
-```sh
-(sl_venv) smart_license $ pip3 install Flask
-```
-In a similar way, install following packages:
-
- 1. Flask
- 2. Flask-Cors
- 3. Flask-JWT
- 4. Flask-RESTful
- 5. Flask-SQLAlchemy
- 6. netmiko
- 7. numpy
- 8. pandas
- 9. pyOpenSSL
-10. pyping
-11. pyYAML
-12. requests
-13. tftpy
-14. schema
-
-### Section IV
 
 **App source code**
 
@@ -324,6 +339,15 @@ Install Git on Ubuntu (If Git is already installed, skip steps shown below and g
 
 ```sh
 (sl_venv) smart_license $ git clone https://github.com/CiscoDevNet/smart-license-app.git
+```
+
+### Section IV
+**Install Python Packages**
+
+Now required pyhton packages can be installed for running Smart Licensing App.
+```sh
+(sl_venv) smart_license $ cd smart-license-app
+(sl_venv) smart-license-app $ pip3 install -r requirements.txt
 ```
 
 ### Section V
@@ -439,33 +463,6 @@ C:\Users\<user_id>\smart_license> sl_venv\Scripts\activate
 
 ### Section III
 
-**Packages**
-
-Now required packages can be installed for running Smart Licensing App.
-```sh
-(sl_venv) C:\Users\<user_id>\smart_license> pip install Flask
-```
-**NOTE: Make sure computer is connected to internet for installing these packages.**
-
-In a similar way, install following packages:  
-
- 1. Flask
- 2. Flask-Cors
- 3. Flask-JWT
- 4. Flask-RESTful
- 5. Flask-SQLAlchemy
- 6. netmiko
- 7. numpy
- 8. pandas
- 9. pyOpenSSL
-10. pyping
-11. pyYAML
-12. requests
-13. tftpy
-14. schema
-
-### Section IV
-
 **To get App source code**
 
 App source can be cloned from GitHub [smart-license-app](https://github.com/CiscoDevNet/smart-license-app) repository.
@@ -488,6 +485,16 @@ Install Git on Windows (If Git is already installed, skip this section)
 ```sh
 (sl_venv) C:\Users\<user_id>\smart_license> git clone https://github.com/CiscoDevNet/smart-license-app.git
 ```
+
+### Section IV
+**Install Python Packages**
+
+Now required pyhton packages can be installed for running Smart Licensing App.
+```sh
+(sl_venv) smart_license $ cd smart-license-app
+(sl_venv) smart-license-app $ pip3 install -r requirements.txt
+```
+
 ### Section V
 
 **Build UI code**
