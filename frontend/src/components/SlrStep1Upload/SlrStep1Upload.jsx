@@ -21,7 +21,7 @@ import { uploadAction, commonAction } from '../../actions';
 import { Button } from "react-bootstrap";
 import Stepper from 'react-stepper-horizontal';
 import ReactTooltip from 'react-tooltip';
-import { SlrStepsInfoPopup } from '../SlrCommon/SlrStepsInfoPopup'
+import { SlrStepsInfoPopup } from '../SlrCommon/SlrStepsInfoPopup';
 
 class SlrStep1Upload extends React.Component {
   constructor(props) {
@@ -92,8 +92,8 @@ class SlrStep1Upload extends React.Component {
             <Stepper steps={ [
               { title: '' },
               { title: 'Generating Request Code' },
-              { title: 'Getting Auth Key from CSSM' },
-              { title: 'Applying Auth Key on Devices' }
+              { title: 'Getting Auth Code from CSSM' },
+              { title: 'Applying Auth Code on Devices' }
             ] }
                      activeColor="#007bff"
                      activeStep={ 0 }/>

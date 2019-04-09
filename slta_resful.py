@@ -32,6 +32,10 @@ from resources.slrrequestcode import slrrequestcode
 from resources.slrrequestinfo import slrrequestinfo
 from resources.slrcontactcssm import slrcontactcssm
 from resources.slrauthzswitch import slrauthzswitch
+from resources.slrexportrequestcodes import Exportreqcodes
+from resources.slrexportauthcodes import Exportauthcodes
+from resources.slrimportcodes import ImportCodes
+from resources.slrfetchauthcodesstatus import Fetchauthcodesstatus
 import platform
 import config
 
@@ -53,6 +57,10 @@ api.add_resource(TokensStatus, '/sl/tokens/status/<string:uuid>/<int:page>')
 api.add_resource(Registrations, '/registrations')
 api.add_resource(slrgeneraterequestcode, '/slr/register/status/<string:uuid>/<int:page>')
 api.add_resource(slrrequestcode, '/slr/device/reqcode/<string:uuid>')
+api.add_resource(Exportreqcodes, '/slr/exportreqcodes/<string:uuid>')
+api.add_resource(Exportauthcodes, '/slr/exportauthcodes/<string:uuid>')
+api.add_resource(ImportCodes, '/slr/importcodes')
+api.add_resource(Fetchauthcodesstatus, '/slr/import/authcodes/status/<string:uuid>')
 api.add_resource(slrrequestinfo, '/registration/status/<string:uuid>')
 api.add_resource(slrcontactcssm, '/device/cssm/authkey/<string:uuid>')
 api.add_resource(slrauthzswitch, '/slr/device/authkey/<string:uuid>')
@@ -65,4 +73,7 @@ if __name__ == '__main__':
     create_sql_tables()
     # Fetch system info
     config.OS_TYPE = platform.system().lower()
-    app.run(debug=True, host='0.0.0.0', ssl_context='adhoc', use_reloader=True)
+    if config.OS_TYPE == "windows":
+        app.run(debug=True, host='127.0.0.1', ssl_context='adhoc', use_reloader=True)
+    else:
+        app.run(debug=True, host='0.0.0.0', ssl_context='adhoc', use_reloader=True)

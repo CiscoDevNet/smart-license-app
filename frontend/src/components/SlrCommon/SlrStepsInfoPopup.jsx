@@ -63,11 +63,11 @@ export class SlrStepsInfoPopup extends Component {
 
             <div className="card">
               <div className="card-header">
-                <h6>Step 3 - Getting Auth Key from CSSM</h6>
+                <h6>Step 3 - Getting Authorization Codes from CSSM</h6>
               </div>
               <div className="card-body">
                 <ul className="slrDescription">
-                  <li className="card-text">Auth Key will be retrived from the CSSM for the uploaded devices.
+                  <li className="card-text">Authorization Codes will be retrived from the CSSM for the uploaded devices.
                   </li>
                   <li className="card-text">Access credential for CSSM is required, will pop up to get Cisco.com 
                   login credential to connect to CSSM.
@@ -82,11 +82,11 @@ export class SlrStepsInfoPopup extends Component {
 
             <div className="card">
               <div className="card-header">
-                <h6>Step 4 - Applying Auth Key on Devices</h6>
+                <h6>Step 4 - Applying Authorization Codes on Devices</h6>
               </div>
               <div className="card-body">
                 <ul className="slrDescription">
-                  <li className="card-text">Auth Key will be applied to each device from the list of uploaded devices for registration</li>
+                  <li className="card-text">Authorization Codes will be applied to each device from the list of uploaded devices for registration</li>
                   <li className="card-text">This step must be performed back again in the 'Air-Gapped', 'Dark' or 'Disconnected' 
                     Netowrk, where the devices are deployed.</li>
                   <li className="card-text">If this application is not running on same network where the devices are deployed,

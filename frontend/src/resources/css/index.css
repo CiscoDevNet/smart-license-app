@@ -86,6 +86,12 @@ body{
     color: inherit;
 }
 
+a.support {
+    text-decoration: none;
+    text-decoration-color: #c2cee3;
+    color: inherit;
+}
+
 a {
     cursor: pointer;
 }

@@ -62,6 +62,9 @@ class slrcontactcssm(Resource):
         except Exception as e: 
             print(e)
             return database_err, 500
+        if not rows:
+            return ({"request": "No Devices with this UUID"}), 400
+
         for row in rows:
             print("Launching threads to get auth tokens")
             response_update = {}

@@ -19,7 +19,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import UltimatePaginationBootstrap from 'react-ultimate-pagination-bootstrap-4';
 import '../../resources/css/loading.css';
-import { Modal, Panel } from "react-bootstrap";
+import { Panel } from "react-bootstrap";
 import ReactTooltip from 'react-tooltip';
 import loadingImage from '../../resources/images/Loading.gif';
 import { commonAction } from '../../actions';
@@ -27,7 +27,8 @@ import '../../resources/css/common.css';
 import Stepper from 'react-stepper-horizontal';
 import { toaster } from "../../helpers/toasterHelper";
 import { getRegistrationStatus, isEnableButton } from "../../helpers";
-import { SlrStepsInfoPopup } from '../SlrCommon/SlrStepsInfoPopup'
+import { SlrStepsInfoPopup } from '../SlrCommon/SlrStepsInfoPopup';
+import Modal from 'react-bootstrap4-modal';
 
 class SlrStep2ReqCodeStatus extends Component {
 
@@ -44,16 +45,10 @@ class SlrStep2ReqCodeStatus extends Component {
     this.onPageChange = this.onPageChange.bind(this);
     this.hideLoadingModal = this.hideLoadingModal.bind(this);
     this.showLoadingModal = this.showLoadingModal.bind(this);
-    this.handleBackToSlrStepsClick = this.handleBackToSlrStepsClick.bind(this);
     this.handleNextStep3Click = this.handleNextStep3Click.bind(this);
     this.refreshRegisterStatus = this.refreshRegisterStatus.bind(this);
     this.toggleButton = this.toggleButton.bind(this);
     this.infodivclickS2S = this.infodivclickS2S.bind(this);
-  }
-
-  handleBackToSlrStepsClick(event) {
-    event.preventDefault();
-    commonAction.backToSlrStepsClicked();
   }
 
   handleNextStep3Click(event) {
@@ -231,8 +226,8 @@ class SlrStep2ReqCodeStatus extends Component {
                        { [
                          { title: 'Device Details Upload' },
                          { title: '' },
-                         { title: 'Getting Auth Key from CSSM' },
-                         { title: 'Applying Auth Key on Devices' }
+                         { title: 'Getting Auth Code from CSSM' },
+                         { title: 'Applying Auth Code on Devices' }
                        ] }
                      activeStep={ 1 }
                      activeColor="#28a745"
@@ -268,17 +263,14 @@ class SlrStep2ReqCodeStatus extends Component {
                         (
                           <Panel>
                             <Panel.Body className="">
+                             <p>
                               <div className="stepMessageWarningContainer">
                               <div className="stepMessageWarning">
                                   <div className="slrStepIcon">
-                                    <i
-                                      className="fa fa-exclamation-triangle text-warning"></i>
+                                    <i className="fa fa-exclamation-triangle text-warning"></i>
                                   </div>
                                   <div className="slrStepWarningDescription">
-                                    <p>
-                                      Don't
-                                      disconnect from the network
-                                    </p>
+                                      Don't disconnect from the network
                                   </div>
                                 </div>                              
                                 <div className="stepMessageWarning">
@@ -286,8 +278,7 @@ class SlrStep2ReqCodeStatus extends Component {
                                     <i className="fa fa-exclamation-triangle text-warning"></i>
                                   </div>
                                   <div className="slrStepWarningDescription">
-                                    <p>Request
-                                      Code Generation on Devices is in progress, wait until completed</p>
+                                    Request Code Generation on Devices is in progress, wait until completed
                                   </div>
                                 </div>
                                 <div className="stepMessageWarning">
@@ -295,25 +286,25 @@ class SlrStep2ReqCodeStatus extends Component {
                                     <i className="fa fa-exclamation-triangle text-warning"></i>
                                   </div>
                                   <div className="slrStepWarningDescription">
-                                    <p>Click
-                                      on 'Refresh' to get the status updated</p>
+                                    Click on <b>'Refresh'</b> to get the status updated
                                   </div>
                                 </div>
                               </div>
+                             </p> 
                             </Panel.Body>
                           </Panel>
                         ) :
                           (
                             <Panel>
                               <Panel.Body className="">
+                               <p>
                                 <div className="stepMessageSuccessContainer">
                                   <div className="stepMessageSuccess">
                                     <div className="slrStepIcon">
                                       <i className="fa fa-check-circle text-success"></i>
                                     </div>
                                     <div className="slrStepWarningDescription">
-                                      <p>Request
-                                        Code Generation on Devices is completed</p>
+                                      Request Code Generation on Devices is completed
                                     </div>
                                   </div>
                                   <div className="stepMessageWarning">
@@ -321,10 +312,11 @@ class SlrStep2ReqCodeStatus extends Component {
                                       <i className="fa fa-check-circle text-success"></i>
                                     </div>
                                     <div className="slrStepWarningDescription">
-                                      <p>Click on next to perform the next step</p>
+                                      Click on <b>'Next'</b> to perform the next step
                                     </div>
                                   </div>
                                 </div>
+                               </p> 
                               </Panel.Body>
                             </Panel>
                           )
@@ -364,17 +356,10 @@ class SlrStep2ReqCodeStatus extends Component {
 
         { /*Modal Div*/ }
         <div>
-          <Modal
-            className="transparentModal"
-            ref={ c => this.modalRef = c }
-            show={ this.state.alertModal }
-            onHide={ this.handleClose }>
-            <Modal.Body>
-              <h4>
-                <img
-                  src={ loadingImage } alt="Loading ..."/>
-              </h4>
-            </Modal.Body>
+          <Modal visible={ this.state.alertModal } className="transparentModal spinnerModal">
+            <div className="modal-body">
+              <div className="loader"></div>
+            </div>
           </Modal>
         </div>
         { /*End Of Modal*/ }

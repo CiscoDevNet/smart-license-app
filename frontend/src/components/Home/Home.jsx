@@ -68,19 +68,37 @@ class Home extends Component {
     const currentStep = status !== undefined ? status.toLowerCase() : undefined;
 
     if (registrationType.toLowerCase() === 'sl'){
-      this.props.history.push('/registrationStatus');
+      if (currentStep === 'csv_file_uploaded') {
+        this.props.history.push('/uploadedDevices');
+      } else { 
+        this.props.history.push('/registrationStatus');
+      }
+    } else if (currentStep === slrConstant.SLR_STEP_3_EXPORT_STARTED.toLowerCase()
+              || currentStep === slrConstant.SLR_STEP_3_EXPORT_COMPLETED.toLowerCase()
+              || currentStep === slrConstant.SLR_STEP_3_EXPORT_FAILED.toLowerCase()
+              || currentStep === slrConstant.SLR_STEP_3_IMPORT_STARTED.toLowerCase()
+              || currentStep === slrConstant.SLR_STEP_3_IMPORT_FAILED.toLowerCase()
+              || currentStep === slrConstant.SLR_STEP_2_IMPORT_STARTED.toLowerCase()
+              || currentStep === slrConstant.SLR_STEP_2_IMPORT_COMPLETED.toLowerCase()
+              || currentStep === slrConstant.SLR_STEP_2_IMPORT_FAILED.toLowerCase()
+    ) {
+      this.props.history.push('/SlrImport');
     } else if(currentStep === 's4s' || currentStep === 's4c') {
       this.props.history.push('/slrStep4ApplyAuthKeysStatus');
-    } else if (currentStep === slrConstant.SLR_STEP_3_COMPLETED.toLowerCase()) {
+    } else if (currentStep === slrConstant.SLR_STEP_3_COMPLETED.toLowerCase() 
+              || currentStep === slrConstant.SLR_STEP_3_IMPORT_COMPLETED.toLowerCase()) {
       this.props.history.push('/slrStep4ApplyAuthKeys');
     } else if (currentStep === slrConstant.SLR_STEP_3_STARTED.toLowerCase()) {
       this.props.history.push('/slrStep3GetAuthKeysStatus');
-    } else if (currentStep === slrConstant.SLR_STEP_2_COMPLETED.toLowerCase()) {
+    } else if (currentStep === slrConstant.SLR_STEP_2_COMPLETED.toLowerCase() 
+              || currentStep === slrConstant.SLR_STEP_2_EXPORT_COMPLETED.toLowerCase() ) {
       this.props.history.push('/slrStep3GetAuthKeys');
-    } else if (currentStep === slrConstant.SLR_STEP_2_STARTED.toLowerCase()) {
+    } else if (currentStep === slrConstant.SLR_STEP_2_STARTED.toLowerCase() 
+              || currentStep === slrConstant.SLR_STEP_2_EXPORT_STARTED.toLowerCase() 
+              || currentStep === slrConstant.SLR_STEP_2_EXPORT_FAILED.toLowerCase()) {
       this.props.history.push('/slrStep2ReqCodeStatus');
-    } else if ( currentStep === slrConstant.SLR_STEP_1_COMPLETED.toLowerCase() ||
-                currentStep === 'sls' || currentStep === 'csv_file_uploaded'.toLowerCase() ) {
+    } else if ( currentStep === slrConstant.SLR_STEP_1_COMPLETED.toLowerCase()
+              || currentStep === 'sls' || currentStep === 'csv_file_uploaded'.toLowerCase() ) {
       this.props.history.push('/slrStep2ReqCode');
     }
   }
@@ -101,6 +119,8 @@ class Home extends Component {
       history.push('/upload');
     } else if ( type.toLowerCase() === 'slr'.toLowerCase() ){
       history.push('/slrStep1Upload');
+    } else if ( type.toLowerCase() === 'slrimport'.toLowerCase() ){
+      history.push('/slrImport');
     }
   }
 
@@ -183,22 +203,18 @@ class Home extends Component {
                           Software Management API Server, use 'SL' option.</p>
                         <div>{ '\u00a0' }</div>
                         <div className="text-center">
-                          {/*<Link to="/upload">*/}
                             <button type="button" className="btn btn-primary" onClick={() => this.handleStart('sl')}>Start
                             </button>
-                          {/*</Link>*/}
-
                         </div>
                       </div>
                     </div>
                     { /*End of SL Card*/ }
 
                     <div className="card">
-                      <div className="card-header"><h6>SLR - Disconnected/Dark/Air-Gapped
-                        Network</h6>
+                      <div className="card-header"><h6>SLR - Disconnected Network</h6>
                       </div>
                       <div className="card-body">
-                        <p className="card-text">If your network is a Disconnected/Dark/Air-Gapped
+                        <p className="card-text">If your network is a Disconnected, Dark or Air-Gapped
                           Network that has no connectivity to Cisco Smart Software Management API
                           Server, use 'SLR' option</p>
                         <div className="text-center">
@@ -208,6 +224,20 @@ class Home extends Component {
                       </div>
                     </div>
                     { /*End of SLR Card*/ }
+
+                    <div className="card">
+                      <div className="card-header"><h6>SLR - Import</h6>
+                      </div>
+                      <div className="card-body">
+                        <p className="card-text">If you have SLR Request Codes or Authorization Codes exported in a file, use 'SLR-Import' option</p>
+                        <div>{ '\u00a0' }</div>
+                        <div className="text-center">
+                            <button type="button" className="btn btn-primary" onClick={() => this.handleStart('slrimport') }>Start</button>
+                        </div>
+                      </div>
+                    </div>
+                    { /*End of Import Card*/ }
+
                   </div>
                 </div>
               </section>

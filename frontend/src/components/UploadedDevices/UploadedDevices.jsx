@@ -20,7 +20,8 @@ import { connect } from 'react-redux';
 import UltimatePaginationBootstrap from 'react-ultimate-pagination-bootstrap-4';
 import { getAuthToken, needsLoginCheck } from '../../helpers/serviceHelper';
 import { registerConstant } from "../../constants";
-import {LoginPopup } from "../Login/LoginPopup"
+import {LoginPopup } from "../Login/LoginPopup";
+import Modal from 'react-bootstrap4-modal';
 
 const passwordMask = '********';
 
@@ -28,17 +29,16 @@ class UploadedDevices extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      showUC: false,
       devices: null,
       page: localStorage.getItem('page') ? localStorage.getItem('page') : 1,
       totalPages: (this.props && this.props.upload && this.props.upload.uploadRsp && this.props.upload.uploadRsp.totalpages) || 1,
       showLoginPopup: false,
+      alertModal: false,
     };
     this.modalRef = null;
     this.modalMessage = '';
     this.handleRegisterClick = this.handleRegisterClick.bind(this);
     this.handleRegisterDevices = this.handleRegisterDevices.bind(this);
-    this.handleClose = this.handleClose.bind(this);
     this.onPageChange = this.onPageChange.bind(this);
   }
 
@@ -62,7 +62,6 @@ class UploadedDevices extends React.Component {
   handleRegisterDevices() {
     console.log('In handleRegisterDevices');
     this.modalMessage = 'Initiating Registration....';
-    this.setState({ showUC: true });
     console.log("Props:", { ...this.props });
 
     const user = (this.props.auth.user);
@@ -90,13 +89,8 @@ class UploadedDevices extends React.Component {
       })
       .catch(errorResponse => {
         this.modalMessage = `Registration Initiation Failed: ${errorResponse}`;
-        this.setState({ showUC: true });
         console.log(errorResponse)
       })
-  }
-
-  handleClose() {
-    this.setState({ showUC: false });
   }
 
   onPageChange(page) {
@@ -124,7 +118,6 @@ class UploadedDevices extends React.Component {
   closeLoginPopup() {
     this.setState( { showLoginPopup: false } )
   }
-
 
   render() {
     console.log('Render called from:UploadedDevices');
@@ -206,6 +199,15 @@ class UploadedDevices extends React.Component {
             </div>
           </div>
         </div>
+        { /*Modal Div*/ }
+        <div>
+          <Modal visible = {this.state.alertModal} className="transparentModal spinnerModal">
+            <div className="modal-body">
+              <div className="loader"></div>
+            </div>
+          </Modal>
+        </div>
+        { /*End Of Modal*/ }
         {this.state.showLoginPopup ? <LoginPopup closeLoginPopup={this.closeLoginPopup.bind(this)} 
                                                    callAfterLogin={this.handleRegisterDevices.bind(this)}  /> : null}
       </div>

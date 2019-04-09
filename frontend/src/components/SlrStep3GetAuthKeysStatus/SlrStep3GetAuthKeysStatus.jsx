@@ -19,7 +19,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import UltimatePaginationBootstrap from 'react-ultimate-pagination-bootstrap-4';
 import '../../resources/css/loading.css';
-import { Modal, Panel } from "react-bootstrap";
+import { Panel } from "react-bootstrap";
 import ReactTooltip from 'react-tooltip';
 import loadingImage from '../../resources/images/Loading.gif';
 import { commonAction } from '../../actions';
@@ -27,7 +27,8 @@ import '../../resources/css/common.css';
 import Stepper from 'react-stepper-horizontal';
 import { toaster } from "../../helpers/toasterHelper";
 import { getRegistrationStatus, isEnableButton } from "../../helpers";
-import { SlrStepsInfoPopup } from '../SlrCommon/SlrStepsInfoPopup'
+import { SlrStepsInfoPopup } from '../SlrCommon/SlrStepsInfoPopup';
+import Modal from 'react-bootstrap4-modal';
 
 class SlrStep3GetAuthKeysStatus extends Component {
 
@@ -231,7 +232,7 @@ class SlrStep3GetAuthKeysStatus extends Component {
                          { title: 'Device Details Upload' },
                          { title: 'Generating Request Code' },
                          { title: '' },
-                         { title: 'Applying Auth Key on Devices' }
+                         { title: 'Applying Auth Code on Devices' }
                        ] }
                      activeStep={ 2 }
                      activeColor="#28a745"
@@ -243,7 +244,7 @@ class SlrStep3GetAuthKeysStatus extends Component {
               <section>
                 <div className="card">
                   <div className="card-header">
-                    <h4>SLR Step 3: Getting Auth Keys Status</h4>
+                    <h4>SLR Step 3: Getting Authorization Codes Status</h4>
                     <hr/>
                   </div>
                   <div className="card-body">
@@ -254,7 +255,7 @@ class SlrStep3GetAuthKeysStatus extends Component {
                         <tr>
                           <th className="text-nowrap text-center">Device IP</th>
                           <th className="text-nowrap text-center">Request Code Status</th>
-                          <th className="text-nowrap text-center">Get Auth Key Status</th>
+                          <th className="text-nowrap text-center">Get Auth Code Status</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -267,70 +268,60 @@ class SlrStep3GetAuthKeysStatus extends Component {
                         (
                           <Panel>
                             <Panel.Body className="">
+                             <p>
                               <div className="stepMessageWarningContainer">
                                 <div className="stepMessageWarning">
                                   <div className="slrStepIcon">
-                                    <i
-                                      className="fa fa-exclamation-triangle text-warning"></i>
+                                    <i className="fa fa-exclamation-triangle text-warning"></i>
                                   </div>
                                   <div className="slrStepWarningDescription">
-                                    <p>
-                                      Don't
-                                      disconnect from the network
-                                    </p>
+                                      Don't disconnect from the network
                                   </div>
                                 </div>
                                 <div className="stepMessageWarning">
                                   <div className="slrStepIcon">
-                                    <i
-                                      className="fa fa-exclamation-triangle text-warning"></i>
+                                    <i className="fa fa-exclamation-triangle text-warning"></i>
                                   </div>
                                   <div className="slrStepWarningDescription">
-                                    <p>
-                                      Getting
-                                      Auth Keys from CSSM is in progress, wait until completed
-                                    </p>
+                                      Getting Authorization Codes from CSSM is in progress, wait until completed
                                   </div>
                                 </div>
                                 <div className="stepMessageWarning">
                                   <div className="slrStepIcon">
-                                    <i
-                                      className="fa fa-exclamation-triangle text-warning"></i>
+                                    <i className="fa fa-exclamation-triangle text-warning"></i>
                                   </div>
                                   <div className="slrStepWarningDescription">
-                                    <p>Click
-                                      on 'Refresh' to get the status updated</p>
+                                    Click on <b>'Refresh'</b> to get the status updated
                                   </div>
                                 </div>
                               </div>
+                              </p> 
                             </Panel.Body>
                           </Panel>
                         ) :
                         (
                           <Panel>
                             <Panel.Body className="">
+                             <p>
                               <div className="stepMessageSuccessContainer">
                                 <div className="stepMessageWarning">
                                   <div className="slrStepIcon">
-                                    <i
-                                      className="fa fa-check-circle text-success"></i>
+                                    <i className="fa fa-check-circle text-success"></i>
                                   </div>
                                   <div className="slrStepWarningDescription">
-                                    <p>Getting
-                                      Auth Keys from CSSM is completed</p>
+                                    Getting Authorization Codes from CSSM is completed
                                   </div>
                                 </div>
                                 <div className="stepMessageWarning">
                                   <div className="slrStepIcon">
-                                    <i
-                                      className="fa fa-check-circle text-success"></i>
+                                    <i className="fa fa-check-circle text-success"></i>
                                   </div>
                                   <div className="slrStepWarningDescription">
-                                    <p>Click
-                                      on next to perform the next step</p>
+                                    Click on <b>'Next'</b> to perform the next step
                                   </div>
                                 </div>
                               </div>
+                             </p> 
                             </Panel.Body>
                           </Panel>
                         )
@@ -351,8 +342,7 @@ class SlrStep3GetAuthKeysStatus extends Component {
                       <button className="btn btn-primary"
                               onClick={ this.handleNextStep4Click }
                               disabled={ !this.state.isEnableButton }
-                      >Next
-                      </button>
+                      >Next</button>
                     </div>
                   </div>
                 </div>
@@ -364,19 +354,12 @@ class SlrStep3GetAuthKeysStatus extends Component {
 
         { /*Modal Div*/ }
         <div>
-          <Modal
-            className="transparentModal"
-            ref={ c => this.modalRef = c }
-            show={ this.state.alertModal }
-            onHide={ this.handleClose }>
-            <Modal.Body>
-              <h4>
-                <img
-                  src={ loadingImage } alt="Loading ..."/>
-              </h4>
-            </Modal.Body>
+          <Modal visible={ this.state.alertModal } className="transparentModal spinnerModal">
+            <div className="modal-body">
+              <div className="loader"></div>
+            </div>
           </Modal>
-        </div>
+        </div>        
         { /*End Of Modal*/ }
 
         {this.state.showSlrInfoPopupS3S ? <SlrStepsInfoPopup closeSlrInfo={this.closeSlrInfoPopupS3S.bind(this)}/> : null}

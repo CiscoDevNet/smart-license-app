@@ -51,7 +51,7 @@ function nextStep3() {
 }
 
 function getAuthKeys() {
-    console.log('Get Auth Keys Clicked !!!');
+    console.log('Get Authorization Codes Clicked !!!');
     history.push('/slrStep3GetAuthKeysStatus');
 }
 
@@ -61,6 +61,6 @@ function nextStep4() {
 }
 
 function applyAuthKeys() {
-    console.log('Apply Auth Keys Clicked !!!');
+    console.log('Apply Authorization Codes Clicked !!!');
     history.push('/slrStep4ApplyAuthKeysStatus');
 }

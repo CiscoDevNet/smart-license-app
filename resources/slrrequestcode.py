@@ -82,6 +82,8 @@ class slrrequestcode(Resource):
         print ("Value of username is "+ username + " password " + password)
         s = slr("", "", "")
         s.update_req_token(slr_req_tbl, uuid, device_ip, "")
+        result = ""
+        result_lic_count = ""
         try:
             lic_rows = s.find_by_uuid_ipaddr(uuid, slr_req_tbl, device_ip)
             license = s.get_license(lic_rows[0])
@@ -95,9 +97,8 @@ class slrrequestcode(Resource):
                 print("Value of udi is " + str(udi))
                 first = 1
                 first_count = 1
-                result = ""
-                lic_count_string = ""
-                result_lic_count = ""
+                # result = ""
+                # result_lic_count = ""
                 for entitlement_tag in udi:
                     print (entitlement_tag);
                     if entitlement_tag_string in entitlement_tag:
@@ -108,7 +109,7 @@ class slrrequestcode(Resource):
                             lic = entitlement_tag.split(":")[-1]
                         result = result + lic
                     if count_string in entitlement_tag:
-                        if first_count :
+                        if first_count:
                             lic_count_string = entitlement_tag.split(":")[-1].replace(" ", "")
                             first_count = 0
                         else:
@@ -116,6 +117,10 @@ class slrrequestcode(Resource):
                         result_lic_count = result_lic_count + lic_count_string
                 print("Value of entitlement tag is " + result)
                 print("Value of count of licenses is " + result_lic_count)
+                # If we don't get lic ent tag and count from the device, indicate error
+                if (result is "") or (result_lic_count is ""):
+                    result = "LIC_ENT_TAG_NOT_FOUND"
+                    result_lic_count = "LIC_COUNT_NOT_FOUND"
                 s.update_entitlement_tag(slr_req_tbl, uuid, device_ip, result)
                 s.update_license_count(slr_req_tbl, uuid, device_ip, result_lic_count)
             else:
@@ -123,8 +128,11 @@ class slrrequestcode(Resource):
                 print("Value of the output is " + output)
                 s.update_req_token(slr_req_tbl, uuid, device_ip, output.split('\n')[-2])
                 s.update_entitlement_tag(slr_req_tbl, uuid, device_ip, license)
-        
-            s.update_status(slr_req_tbl, uuid, device_ip, s_done, step)
+            # If we don't get lic ent tag and count from the device, it is considered as failed
+            if (result is "LIC_ENT_TAG_NOT_FOUND") or (result_lic_count is "LIC_COUNT_NOT_FOUND"):
+                s.update_status(slr_req_tbl, uuid, device_ip, "License details not found from the device", step)
+            else:
+                s.update_status(slr_req_tbl, uuid, device_ip, s_done, step)
         except Exception as e:
             print(e)
             s.update_status(slr_req_tbl, uuid, device_ip, str(e).split(":")[0], step)

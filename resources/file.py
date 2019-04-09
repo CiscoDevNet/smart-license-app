@@ -1,3 +1,4 @@
+
 # Copyright (c) 2019 Cisco and/or its affiliates.
 #
 # This software is licensed to you under the terms of the Cisco Sample
@@ -12,6 +13,7 @@
 # writing, software distributed under the License is distributed on an "AS
 # IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
+
 
 import pandas as pd
 import json
@@ -68,7 +70,9 @@ class File(Resource):
         data = File.parser.parse_args()
         print("OAuth token is:", data['oauth_token'])
 
+        # Generate UUID to identify registration request
         uuid_str = str(uuid.uuid4())
+
         if 'file' not in request.files:
             return {"message": "No File in the request!"}, 400
         file = request.files['file']
@@ -87,6 +91,9 @@ class File(Resource):
         upload_info_dict['type'] = data['registration_type']
         upload_info_dict['timestamp'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         upload_info_dict['status'] = "csv_file_uploaded"
+
+        # Also set REGISTRATION_NAME as filename in config file
+        config.REGISTRATION_NAME = file.filename
 
         # Create dictionaries for device_store, validation_store, device_status_store
         converted_json, converted_validation_json, converted_status_json = File.csv_to_json(file)
@@ -160,6 +167,13 @@ class File(Resource):
     @classmethod
     def csv_to_json(cls, data):
         df = pd.read_csv(data)
+
+        # Added to create device_uuid for each device in CSV file
+        # define a function for the new column - device_uuid
+        # Generate one more UUID to identify each device in registration request
+        fn = lambda row: str(uuid.uuid4())
+        # get column data with an index
+        device_uuid_col = df.apply(fn, axis=1)
         print("Printing device_store dataframe...")
         print(df)
         df_validation = df.iloc[:, 3:6]
@@ -170,10 +184,15 @@ class File(Resource):
         df_status['status'] = 'Unregistered'
         print("Printing device_status_store dataframe...")
         print(df_status)
+        # After all dataframes are ready apply new device_uuid column to df & df_status
+        # For df dataframe assign values to column 'device_uuid'
+        df = df.assign(device_uuid=device_uuid_col.values)
         df = df.to_json(orient='records')
         dfjson = json.loads(df)
         df_validation = df_validation.to_json(orient='records')
         dfvalidjson = json.loads(df_validation)
+        # For dt_status dataframeassign values to column 'device_uuid'
+        df_status = df_status.assign(device_uuid=device_uuid_col.values)
         df_status = df_status.to_json(orient='records')
         dfstatusjson = json.loads(df_status)
         print("Printing device_status_store json...")

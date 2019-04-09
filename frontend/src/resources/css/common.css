@@ -40,7 +40,7 @@
     justify-content: center !important;
 }
 
-.actionButtonGroup, .actionButtonGroup2, .actionButtonGroup3, .actionButtonGroup4{
+.actionButtonGroup, .actionButtonGroup2, .actionButtonGroup3, .actionButtonGroup4, .actionButtonGroup5{
     display: grid;
     grid-column-gap: 5px;
     align-items: baseline;
@@ -53,6 +53,10 @@
 
 .actionButtonGroup4{
     grid-template-columns:1fr 4fr 1fr 1fr;
+}
+
+.actionButtonGroup5{
+    grid-template-columns:1fr 4fr 1fr 1fr 1fr;
 }
 
 .testColor {
@@ -149,4 +153,12 @@
 
   .page-item.active .page-link {
     z-index: unset;
+  }
+
+  .btn {
+    white-space: nowrap;
+  }
+
+  .colorRed {
+      color: #f00;
   }

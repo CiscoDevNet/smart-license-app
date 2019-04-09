@@ -19,7 +19,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import UltimatePaginationBootstrap from 'react-ultimate-pagination-bootstrap-4';
 import '../../resources/css/loading.css';
-import { Modal, Panel } from "react-bootstrap";
+import { Panel } from "react-bootstrap";
 import ReactTooltip from 'react-tooltip';
 import loadingImage from '../../resources/images/Loading.gif';
 import { commonAction } from '../../actions';
@@ -27,7 +27,8 @@ import '../../resources/css/common.css';
 import Stepper from 'react-stepper-horizontal';
 import { toaster } from "../../helpers/toasterHelper";
 import { getAuthToken, getRegistrationStatus, isEnableButton } from "../../helpers";
-import { SlrStepsInfoPopup } from '../SlrCommon/SlrStepsInfoPopup'
+import { SlrStepsInfoPopup } from '../SlrCommon/SlrStepsInfoPopup';
+import Modal from 'react-bootstrap4-modal';
 
 class SlrStep4ApplyAuthKeys extends Component {
 
@@ -102,6 +103,7 @@ class SlrStep4ApplyAuthKeys extends Component {
     const { uuid } = this.props;
     const pageNumber = typeof page === typeof 5 ? page : this.state.page;
     this.showLoadingModal();
+    console.log("Step 4: UUID::" + uuid);
 
     const respObj = await this.fetchRegisterStatus(`/slr/register/status/${uuid}/${pageNumber}`);
     const resp = await respObj.json();
@@ -265,7 +267,7 @@ class SlrStep4ApplyAuthKeys extends Component {
                        { [
                          { title: 'Device Details Upload' },
                          { title: 'Generating Request Code' },
-                         { title: 'Getting Auth Key from CSSM' },
+                         { title: 'Getting Auth Code from CSSM' },
                          { title: '' }
                        ] }
                      activeStep={ 3 }
@@ -278,7 +280,7 @@ class SlrStep4ApplyAuthKeys extends Component {
               <section>
                 <div className="card">
                   <div className="card-header">
-                    <h4>SLR Step 4: Applying Auth Key on Devices</h4>
+                    <h4>SLR Step 4: Applying Authorization Codes on Devices</h4>
                   </div>
                   <div className="card-body">
                     <p className="card-text"></p>
@@ -288,7 +290,7 @@ class SlrStep4ApplyAuthKeys extends Component {
                         <tr>
                           <th className="text-nowrap text-center">Device IP</th>
                           <th className="text-nowrap text-center">Request Code Status</th>
-                          <th className="text-nowrap text-center">Get Auth Key Status</th>
+                          <th className="text-nowrap text-center">Get Auth Code Status</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -300,17 +302,14 @@ class SlrStep4ApplyAuthKeys extends Component {
                     <div className="text-left">
                       <Panel>
                         <Panel.Body className="">
+                         <p>
                           <div className="stepMessageWarningContainer">
                             <div className="stepMessageWarning">
                               <div className="slrStepIcon">
                                 <i className="fa fa-exclamation-triangle text-warning"></i>
                               </div>
                               <div className="slrStepWarningDescription">
-                                <p>
-                                  This
-                                  step should be executed again on the network where the devices are
-                                  connected and reachable
-                                </p>
+                                  This step should be executed again on the network where the devices are connected and reachable
                               </div>
                             </div>
                             <div className="stepMessageWarning">
@@ -318,11 +317,7 @@ class SlrStep4ApplyAuthKeys extends Component {
                                 <i className="fa fa-exclamation-triangle text-warning"></i>
                               </div>
                               <div className="slrStepWarningDescription">
-                                <p>
-                                  Make
-                                  sure you are connected to the devices
-                                  network(Disconnected/Dark/Air-Gapped Network
-                                </p>
+                                  Make sure you are connected to the devices network(Disconnected/Dark/Air-Gapped Network)
                               </div>
                             </div>
                             <div className="stepMessageWarning">
@@ -330,11 +325,11 @@ class SlrStep4ApplyAuthKeys extends Component {
                                 <i className="fa fa-exclamation-triangle text-warning"></i>
                               </div>
                               <div className="slrStepWarningDescription">
-                                <p>Click
-                                  on 'Apply Auth Keys' to initiate this step</p>
+                                Click on <b>'Apply Authorization Codes'</b> to initiate this step
                               </div>
                             </div>
                           </div>
+                         </p> 
                         </Panel.Body>
                       </Panel>
                     </div>
@@ -349,7 +344,7 @@ class SlrStep4ApplyAuthKeys extends Component {
                       <button className="btn btn-primary"
                               onClick={ this.handleApplyAuthKeysClick }
                               disabled={ !this.state.isEnableButton }
-                      >Apply Auth Keys
+                      >Apply Authorization Codes
                       </button>
                     </div>
                   </div>
@@ -362,19 +357,12 @@ class SlrStep4ApplyAuthKeys extends Component {
 
         { /*Modal Div*/ }
         <div>
-          <Modal
-            className="transparentModal"
-            ref={ c => this.modalRef = c }
-            show={ this.state.alertModal }
-            onHide={ this.handleClose }>
-            <Modal.Body>
-              <h4>
-                <img
-                  src={ loadingImage } alt="Loading ..."/>
-              </h4>
-            </Modal.Body>
+          <Modal visible={ this.state.alertModal } className="transparentModal spinnerModal">
+            <div className="modal-body">
+              <div className="loader"></div>
+            </div>
           </Modal>
-        </div>
+        </div>        
         { /*End Of Modal*/ }
         {this.state.showSlrInfoPopupS4 ? <SlrStepsInfoPopup closeSlrInfo={this.closeSlrInfoPopupS4.bind(this)}/> : null}
       </div>

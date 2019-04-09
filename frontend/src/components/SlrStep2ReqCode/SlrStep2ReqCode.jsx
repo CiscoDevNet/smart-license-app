@@ -17,7 +17,7 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
-import { Modal, Button, Panel } from 'react-bootstrap';
+import { Panel } from 'react-bootstrap';
 import UltimatePaginationBootstrap from 'react-ultimate-pagination-bootstrap-4';
 import loadingImage from '../../resources/images/Loading.gif';
 import { commonAction } from '../../actions';
@@ -26,7 +26,8 @@ import Stepper from 'react-stepper-horizontal';
 import { toaster } from "../../helpers/toasterHelper";
 import { getRegistrationStatus, isEnableButton } from "../../helpers/serviceHelper";
 import ReactTooltip from 'react-tooltip';
-import { SlrStepsInfoPopup } from '../SlrCommon/SlrStepsInfoPopup'
+import { SlrStepsInfoPopup } from '../SlrCommon/SlrStepsInfoPopup';
+import Modal from 'react-bootstrap4-modal';
 
 const passwordMask = '********';
 
@@ -34,7 +35,6 @@ class SlrStep2ReqCode extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      showUC: false,
       devices: null,
       page: localStorage.getItem('page') ? localStorage.getItem('page') : 1,
       totalPages: 1,
@@ -46,7 +46,6 @@ class SlrStep2ReqCode extends React.Component {
     this.modalMessage = '';
     this.handleBackToSlrStepsClick = this.handleBackToSlrStepsClick.bind(this);
     this.handleRegisterDevices = this.handleRegisterDevices.bind(this);
-    this.handleClose = this.handleClose.bind(this);
     this.onPageChange = this.onPageChange.bind(this);
     this.handleGenerateReqCodes = this.handleGenerateReqCodes.bind(this);
     this.hideLoadingModal = this.hideLoadingModal.bind(this);
@@ -97,7 +96,6 @@ class SlrStep2ReqCode extends React.Component {
 
   handleRegisterDevices() {
     this.modalMessage = 'Initiating Registration....';
-    this.setState({ showUC: true });
     console.log("Props:", { ...this.props });
 
     const user = (this.props.auth.user);
@@ -133,13 +131,8 @@ class SlrStep2ReqCode extends React.Component {
       })
       .catch(errorResponse => {
         this.modalMessage = `Registration Initiation Failed: ${errorResponse}`;
-        this.setState({ showUC: true });
         console.log(errorResponse)
       })
-  }
-
-  handleClose() {
-    this.setState({ showUC: false });
   }
 
   onPageChange(page) {
@@ -239,21 +232,6 @@ class SlrStep2ReqCode extends React.Component {
 
     return (
       <div>
-        <div>
-          <Modal
-            ref={ c => this.modalRef = c }
-            show={ this.state.showUC }
-            onHide={ this.handleClose }>
-            <Modal.Body>
-              <h4>
-                { this.modalMessage }
-              </h4>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button onClick={ this.handleClose }>Close</Button>
-            </Modal.Footer>
-          </Modal>
-        </div>
         {/*Modal*/}
         <div>
           <Modal visible={ this.state.alertModal } className="transparentModal spinnerModal">
@@ -261,7 +239,6 @@ class SlrStep2ReqCode extends React.Component {
               <div className="loader"></div>
             </div>
           </Modal>
-
         </div>
 
         <div>
@@ -287,8 +264,8 @@ class SlrStep2ReqCode extends React.Component {
             <Stepper steps={ [
               { title: 'Device Details Upload' },
               { title: '' },
-              { title: 'Getting Auth Key from CSSM' },
-              { title: 'Applying Auth Key on Devices' }
+              { title: 'Getting Auth Code from CSSM' },
+              { title: 'Applying Auth Code on Devices' }
             ] }
                      activeStep={ 1 }
                      activeColor="#007bff"
@@ -326,16 +303,14 @@ class SlrStep2ReqCode extends React.Component {
                     <div className="text-left">
                       <Panel>
                         <Panel.Body>
+                          <p>
                           <div className="stepMessageWarningContainer">
                             <div className="stepMessageWarning">
                               <div className="slrStepIcon">
                                 <i className="fa fa-exclamation-triangle text-warning"></i>
                               </div>
                               <div className="slrStepWarningDescription">
-                                <p>This
-                                  step should be executed on the network where the devices are
-                                  connected
-                                  and reachable</p>
+                                This step should be executed on the network where the devices are connected and reachable
                               </div>
                             </div>
                             <div className="stepMessageWarning">
@@ -343,8 +318,7 @@ class SlrStep2ReqCode extends React.Component {
                                 <i className="fa fa-exclamation-triangle text-warning"></i>
                               </div>
                               <div className="slrStepWarningDescription">
-                                <p>Make sure you are connected to the devices
-                                  network(Disconnected/Dark/Air-Gapped Network)</p>
+                                Make sure you are connected to the devices network(Disconnected/Dark/Air-Gapped Network)
                               </div>
                             </div>
                             <div className="stepMessageWarning">
@@ -352,10 +326,11 @@ class SlrStep2ReqCode extends React.Component {
                                 <i className="fa fa-exclamation-triangle text-warning"></i>
                               </div>
                               <div className="slrStepWarningDescription">
-                                <p>Click on 'Generate' to initiate this step</p>
+                                Click on <b>'Generate'</b> to initiate this step
                               </div>
                             </div>
                           </div>
+                          </p>
                         </Panel.Body>
                       </Panel>
                     </div>

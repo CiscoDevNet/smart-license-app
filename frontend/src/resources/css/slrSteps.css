@@ -67,3 +67,7 @@
 .gridDisplay .card-body{
     padding-top: unset;
 }
+
+.slrStepWarningDescription {
+    padding: 2px;
+}

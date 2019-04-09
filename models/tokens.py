@@ -42,11 +42,43 @@ class TokensModel:
             query = "SELECT * FROM validation_store WHERE uuid=?"
         elif table == "upload_info_store":
             query = "SELECT * FROM upload_info_store WHERE uuid=?"
+        elif table == "slr_request_code_tbl":
+            query = "SELECT * FROM slr_request_code_tbl WHERE uuid=?"
 
         result = cursor.execute(query, (uuid,))
         rows = result.fetchall()
         connection.close()
         print("==>> Printing rows from within classmethod: find_by_uuid <<==")
+        print(rows)
+        return rows
+
+    @classmethod
+    def join_by_uuid(cls, uuid, table1, table2):
+        connection = sqlite3.connect('data.db')
+        cursor = connection.cursor()
+
+        query = ""
+
+        if table1 == "slr_request_code_tbl" and table2 == "device_store":
+            # query = "SELECT slr_request_code_tbl.uuid, slr_request_code_tbl.ipaddr," \
+            #     " slr_request_code_tbl.step1, slr_request_code_tbl.step2, slr_request_code_tbl.step3," \
+            #     " slr_request_code_tbl.authz_req_code, slr_request_code_tbl.license_count," \
+            #     " slr_request_code_tbl.license_entitlement_tag, device_store.sa_name, device_store.va_name," \
+            #     " device_store.domain, device_store.device_uuid FROM slr_request_code_tbl INNER JOIN device_store" \
+            #     " ON slr_request_code_tbl.uuid = device_store.uuid WHERE slr_request_code_tbl.uuid=?"
+            query = "SELECT slr_request_code_tbl.uuid, slr_request_code_tbl.ipaddr," \
+                 " slr_request_code_tbl.step1, slr_request_code_tbl.step2, slr_request_code_tbl.step3," \
+                 " slr_request_code_tbl.authz_req_code, slr_request_code_tbl.license_count," \
+                 " slr_request_code_tbl.license_entitlement_tag, device_store.sa_name, device_store.va_name," \
+                 " device_store.domain, device_store.device_uuid, slr_request_code_tbl.authz_response_code" \
+                 " FROM slr_request_code_tbl INNER JOIN device_store" \
+                 " ON slr_request_code_tbl.device_uuid = device_store.device_uuid WHERE slr_request_code_tbl.uuid=?"
+
+        result = cursor.execute(query, (uuid,))
+        # result = cursor.execute(query)
+        rows = result.fetchall()
+        connection.close()
+        print("==>> Printing rows from within classmethod: join_by_uuid <<==")
         print(rows)
         return rows
 
@@ -174,32 +206,60 @@ class TokensModel:
         query = ""
 
         if table == "device_store":
-            query = "INSERT INTO device_store VALUES (?, ?, ?, ?, ?, ?, ?)"
+            query = "INSERT INTO device_store VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
             for device in devices_data_list:
                 cursor.execute(query, (uuid, device['ipaddr'], device['username'], device['password'],
-                                       device['sa_name'], device['va_name'], device['domain']))
+                                       device['sa_name'], device['va_name'], device['domain'], device['device_uuid']))
         elif table == "slr_request_code_tbl":
-            query_slr = "INSERT INTO slr_request_code_tbl VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            query_slr = "INSERT INTO slr_request_code_tbl VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             print("Starting data entry into device_store for SLR")
             for device in devices_data_list:
-                cursor.execute(query_slr, (uuid, device['ipaddr'], "NS", "NS", "NS", "", "", device['license'], device['license_count'], device['tftp_server_ip'], device['tftp_server_path'], ""))
+                cursor.execute(query_slr, (uuid, device['ipaddr'], "NS", "NS", "NS", "", "", device['license'],
+                                           device['license_count'], device['tftp_server_ip'],
+                                           device['tftp_server_path'], "", device['device_uuid']))
             print("Executed data entry into device_store for SLR")
-
         elif table == "validation_store":
             query = "INSERT INTO validation_store VALUES (?, ?, ?, ?)"
             for device in devices_data_list:
                 cursor.execute(query, (uuid, device['sa_name'], device['va_name'], device['domain']))
         elif table == "device_status_store":
-            query = "INSERT INTO device_status_store VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            query = "INSERT INTO device_status_store VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
             for device in devices_data_list:
-                # new_sa_name = "`" + device['sa_name'] + "`"
                 cursor.execute(query, (uuid, device['ipaddr'], device['username'], device['password'],
-                                       device['sa_name'], device['va_name'], device['domain'], device['status']))
+                                       device['sa_name'], device['va_name'], device['domain'], device['status'],
+                                       device['device_uuid']))
         elif table == "upload_info_store":
             query = "INSERT INTO upload_info_store VALUES (?, ?, ?, ?, ?, ?)"
-            status = ""
+
             for device in devices_data_list:
-                cursor.execute(query, (uuid, device['userid'], device['filename'], device['type'], device['timestamp'], device['status']))
+                cursor.execute(query, (uuid, device['userid'], device['filename'], device['type'], device['timestamp'],
+                                       device['status']))
+        connection.commit()
+        connection.close()
+
+    @classmethod
+    def insert_slr(cls, uuid, devices_data_list, table):
+        connection = sqlite3.connect('data.db')
+        cursor = connection.cursor()
+
+        # For debugging
+        print("In tokens model - slr_insert method...")
+        print("devices_data_list:", devices_data_list)
+        print("uuid:", uuid)
+        print("table:", table)
+
+        query = ""
+
+        if table == "slr_request_code_tbl":
+            query_slr = "INSERT INTO slr_request_code_tbl VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            print("Starting insert data entry into slr_request_code_tbl for SLR")
+            for device in devices_data_list:
+                cursor.execute(query_slr, (uuid, device['ipaddr'], device['step1'], device['step2'], device['step3'],
+                                           device['authz_req_code'], device['authz_response_code'], device['license'],
+                                           device['license_count'], device['tftp_server_ip'],
+                                           device['tftp_server_path'], device['license_entitlement_tag'],
+                                           device['device_uuid']))
+            print("Executed insert data entry into slr_request_code_tbl for SLR")
 
         connection.commit()
         connection.close()

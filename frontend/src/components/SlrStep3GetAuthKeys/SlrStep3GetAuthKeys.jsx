@@ -19,16 +19,17 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import UltimatePaginationBootstrap from 'react-ultimate-pagination-bootstrap-4';
 import '../../resources/css/loading.css';
-import { Modal, Panel } from "react-bootstrap";
+import { Panel } from "react-bootstrap";
+import Modal from 'react-bootstrap4-modal';
 import ReactTooltip from 'react-tooltip';
 import loadingImage from '../../resources/images/Loading.gif';
-import { commonAction } from '../../actions';
 import '../../resources/css/common.css';
 import Stepper from 'react-stepper-horizontal';
 import { toaster } from "../../helpers/toasterHelper";
 import { getAuthToken, getRegistrationStatus, isEnableButton, needsLoginCheck } from "../../helpers/serviceHelper";
 import {LoginPopup } from "../Login/LoginPopup"
 import { SlrStepsInfoPopup } from '../SlrCommon/SlrStepsInfoPopup'
+import FileSaver from 'file-saver';
 
 class SlrStep3GetAuthKeys extends Component {
 
@@ -40,21 +41,59 @@ class SlrStep3GetAuthKeys extends Component {
       totalPages: 1,
       alertModal: false,
       isEnableButton: false,
-      showSlrInfoPopupS3: false
+      showSlrInfoPopupS3: false,
+      enableExportButton: false,
     };
     this.onPageChange = this.onPageChange.bind(this);
     this.hideLoadingModal = this.hideLoadingModal.bind(this);
     this.showLoadingModal = this.showLoadingModal.bind(this);
-    this.handleBackToSlrStepsClick = this.handleBackToSlrStepsClick.bind(this);
+    this.handleExportToAFileClick = this.handleExportToAFileClick.bind(this);
     this.handleGetAuthKeys = this.handleGetAuthKeys.bind(this);
     this.handleGetAuthKeyClick = this.handleGetAuthKeyClick.bind(this);
     this.toggleButton = this.toggleButton.bind(this);
     this.infodivclickS3 = this.infodivclickS3.bind(this);
   }
 
-  handleBackToSlrStepsClick(event) {
+  handleExportToAFileClick(event) {
     event.preventDefault();
-    commonAction.backToSlrStepsClicked();
+    this.exportReqCodesToAFile();
+  }
+
+  async exportReqCodesToAFile() {
+    const { uuid } = this.props;
+    console.log('calling exportReqCodesToAFile:', this.props);
+    this.showLoadingModal();
+
+    const expReqCodeRespObj = await fetch(`/slr/exportreqcodes/${uuid}`);
+    const expReqCodeResp = await expReqCodeRespObj.json();
+    const actualExpResp = {
+      status: expReqCodeRespObj.status,
+      ...expReqCodeResp,
+    };
+
+    console.log({ actualExpResp });
+    this.hideLoadingModal();
+
+    if (actualExpResp.status === 200) {
+      console.log('ExpReqCodes: All Good!');
+      console.log('JSON: ' + JSON.stringify(expReqCodeResp));
+      const regName = expReqCodeResp["registration-name"];
+      const fileName = 'reqcodes-' + regName + '.json';
+      const strippedFileName = fileName.replace('.csv', '');
+      var blob = new Blob([JSON.stringify(expReqCodeResp)], {type: "application/json;charset=utf-8"});
+      FileSaver.saveAs(blob, strippedFileName);
+
+    } else {
+      console.log('ExpReqCodes: Need to handle error!');
+      if (actualExpResp.status === 500) {
+        toaster(actualExpResp.status, "Internal Error: Unable to export");
+      } else if (actualExpResp.status === 404) {
+        toaster(actualExpResp.status, "Error: No export found for the requested");
+      } else {
+        toaster(actualExpResp.status, "Unknown Error: Unable to export");
+      }
+    }
+
   }
 
   handleGetAuthKeyClick(event) {
@@ -67,7 +106,7 @@ class SlrStep3GetAuthKeys extends Component {
       console.log("Good To GO !!");
       this.handleGetAuthKeys();
     }
-    console.log("Get Auth Key Clicked !!!");
+    console.log("Get Auth Code Clicked !!!");
   }
 
   getAuthKey() {
@@ -106,12 +145,14 @@ class SlrStep3GetAuthKeys extends Component {
     if (actualResp.status === 200 || actualResp.status === 201) {
       /*TODO: write a method that will give true or false based on status given by backend.*/
       const showButton = isEnableButton(resp.status, 3);
+      const showExportButton = isEnableButton(resp.status, 33);
       this.setState({
         isEnableButton: showButton,
+        enableExportButton: showExportButton,
       });
       console.log({ actualResp });
       console.log('showButton:', showButton);
-
+      console.log('showExpButton:', showExportButton);
     } else {
       console.log('Need to handle error!');
       toaster(actualResp.status, actualResp.message);
@@ -229,6 +270,7 @@ class SlrStep3GetAuthKeys extends Component {
 
   render() {
     console.log("Show Button will be disabled?", !this.state.isEnableButton);
+    console.log("Show Export Button will be disabled?", !this.state.enableExportButton);
     const deviceList = this.state.registeredDevices !== null ? this.state.registeredDevices.map((eachDevice, index) => {
         return (
           <tr key={ `eachDevice.ipaddr:${ index }` }>
@@ -297,7 +339,7 @@ class SlrStep3GetAuthKeys extends Component {
                          { title: 'Device Details Upload' },
                          { title: 'Generating Request Code' },
                          { title: '' },
-                         { title: 'Applying Auth Key on Devices' }
+                         { title: 'Applying Auth Code on Devices' }
                        ] }
                      activeStep={ 2 }
                      activeColor="#007bff"
@@ -309,7 +351,7 @@ class SlrStep3GetAuthKeys extends Component {
               <section>
                 <div className="card">
                   <div className="card-header">
-                    <h4>SLR Step 3: Getting Auth Key from CSSM</h4>
+                    <h4>SLR Step 3: Getting Authorization Codes from CSSM</h4>
                     <hr/>
                   </div>
                   <div className="card-body">
@@ -319,11 +361,6 @@ class SlrStep3GetAuthKeys extends Component {
                         <thead>
                         <tr>
                           <th className="text-nowrap text-center">Device IP</th>
-                          {/*<th className="text-nowrap text-center">User Name</th>*/}
-                          {/*<th className="text-nowrap text-center">Password</th>*/}
-                          {/*<th className="text-nowrap text-center">Smart Account</th>*/}
-                          {/*<th className="text-nowrap text-center">Smart Account Domain</th>*/}
-                          {/*<th className="text-nowrap text-center">Virtual Account</th>*/}
                           <th className="text-nowrap text-center">Request Code Status</th>
                         </tr>
                         </thead>
@@ -335,42 +372,63 @@ class SlrStep3GetAuthKeys extends Component {
                     <div className="text-left">
                       <Panel>
                         <Panel.Body className="">
+                         <p>
+                          <div className="stepMessageWarningContainer">
+                            <b>File Import/Export Option:</b>
+                          </div>
                           <div className="stepMessageWarningContainer">
                             <div className="stepMessageWarning">
                               <div className="slrStepIcon">
                                 <i className="fa fa-exclamation-triangle text-warning"></i>
                               </div>
                               <div className="slrStepWarningDescription">
-                                <p>
-                                  This step should be executed on the network where Cisco Software
-                                  Management(CSSM) API Server is reachable.
-                                </p>
-                              </div>
-                            </div>
-                            <div className="stepMessageWarning">
-                              <div className="slrStepIcon">
-                                <i className="fa fa-exclamation-triangle text-warning"></i>
-                              </div>
-                              <div className="slrStepWarningDescription">
-                                <p>
-                                  Make sure you are connected to the network which has connectivity
-                                  to Internet and/or CSSM API Server.
-                                </p>
-                              </div>
-                            </div>
-                            <div className="stepMessageWarning">
-                              <div className="slrStepIcon">
-                                <i className="fa fa-exclamation-triangle text-warning"></i>
-                              </div>
-                              <div className="slrStepWarningDescription">
-                                <p>Click on 'Get Auth Keys' to initiate this step</p>
+                                Click on <b>'Export To File'</b> to export the Request Codes to a file
                               </div>
                             </div>
                           </div>
+                          </p> 
                         </Panel.Body>
                       </Panel>
                     </div>
-                    <div className="actionButtonGroup3">
+
+                    <div className="text-left">
+                      <Panel>
+                        <Panel.Body className="">
+                         <p>
+                          <div className="stepMessageWarningContainer">
+                            <b>Laptop Move Option:</b>
+                          </div>
+                          <div className="stepMessageWarningContainer">
+                            <div className="stepMessageWarning">
+                              <div className="slrStepIcon">
+                                <i className="fa fa-exclamation-triangle text-warning"></i>
+                              </div>
+                              <div className="slrStepWarningDescription">
+                                  This step should be executed on the network where Cisco Software Management(CSSM) API Server is reachable
+                              </div>
+                            </div>
+                            <div className="stepMessageWarning">
+                              <div className="slrStepIcon">
+                                <i className="fa fa-exclamation-triangle text-warning"></i>
+                              </div>
+                              <div className="slrStepWarningDescription">
+                                  Make sure you are connected to the network which has connectivity to Internet and/or CSSM API Server
+                              </div>
+                            </div>
+                            <div className="stepMessageWarning">
+                              <div className="slrStepIcon">
+                                <i className="fa fa-exclamation-triangle text-warning"></i>
+                              </div>
+                              <div className="slrStepWarningDescription">
+                                Click on <b>'Get Authorization Codes'</b> to initiate this step
+                              </div>
+                            </div>
+                          </div>
+                         </p> 
+                        </Panel.Body>
+                      </Panel>
+                    </div>
+                    <div className="actionButtonGroup4">
                       <button className="btn btn-primary" onClick={ () => this.props.history.push('/') }>Home</button>
                       <UltimatePaginationBootstrap
                         className="customPagination"
@@ -379,9 +437,14 @@ class SlrStep3GetAuthKeys extends Component {
                         onChange={ this.onPageChange }
                       />
                       <button className="btn btn-primary"
+                              onClick={ this.handleExportToAFileClick }
+                              disabled={!this.state.enableExportButton }
+                      >Export To File
+                      </button>
+                      <button className="btn btn-primary"
                               onClick={ this.handleGetAuthKeyClick }
                               disabled={ !this.state.isEnableButton }
-                      >Get Auth Keys
+                      >Get Authorization Codes
                       </button>
                     </div>
                   </div>
@@ -394,17 +457,10 @@ class SlrStep3GetAuthKeys extends Component {
 
         { /*Modal Div*/ }
         <div>
-          <Modal
-            className="transparentModal"
-            ref={ c => this.modalRef = c }
-            show={ this.state.alertModal }
-            onHide={ this.handleClose }>
-            <Modal.Body>
-              <h4>
-                <img
-                  src={ loadingImage } alt="Loading ..."/>
-              </h4>
-            </Modal.Body>
+          <Modal visible = {this.state.alertModal} className="transparentModal spinnerModal">
+            <div className="modal-body">
+              <div className="loader"></div>
+            </div>
           </Modal>
         </div>
         { /*End Of Modal*/ }

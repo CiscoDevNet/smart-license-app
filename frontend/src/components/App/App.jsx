@@ -30,6 +30,7 @@ import { SlrStep3GetAuthKeys } from '../SlrStep3GetAuthKeys';
 import { SlrStep3GetAuthKeysStatus } from '../SlrStep3GetAuthKeysStatus';
 import { SlrStep4ApplyAuthKeys } from '../SlrStep4ApplyAuthKeys';
 import { SlrStep4ApplyAuthKeysStatus } from '../SlrStep4ApplyAuthKeysStatus';
+import { SlrImport } from '../SlrImport';
 import { ToastContainer, toast } from 'react-toastify';
 import 'font-awesome/css/font-awesome.min.css';
 import '../../resources/css/common.css';
@@ -72,6 +73,7 @@ class App extends React.Component {
             <Route exact path="/slrStep3GetAuthKeysStatus" component={SlrStep3GetAuthKeysStatus} />
             <Route exact path="/slrStep4ApplyAuthKeys" component={SlrStep4ApplyAuthKeys} />
             <Route exact path="/slrStep4ApplyAuthKeysStatus" component={SlrStep4ApplyAuthKeysStatus} />
+            <Route exact path="/slrImport" component={SlrImport} />
             <Route exact path="/" component={Home} />
           </div>
         </Router>

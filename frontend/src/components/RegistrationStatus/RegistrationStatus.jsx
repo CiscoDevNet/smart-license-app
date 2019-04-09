@@ -231,10 +231,7 @@ class RegistrationStatus extends Component {
               <div className="loader"></div>
             </div>
           </Modal>
-
         </div>
-
-
       </div>
     )
   }

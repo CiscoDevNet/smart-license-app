@@ -20,11 +20,11 @@
     grid-template-rows: 1fr 1fr;
 }
 
-.uploadActions, .uploadTitle{
+.uploadActions, .uploadTitle, .slrImportActions, .slrImportTitle {
     display: grid;
 }
 
-.uploadActions {
+.uploadActions, .slrImportActions {
     grid-template-columns: 5fr 1fr 1fr;
     grid-column-gap: 5px;
 }

@@ -88,7 +88,6 @@ class slrauthzswitch(Resource):
         client = tftpy.TftpClient(tftp_server, 69)
         file_name =  device_ip + secrets.token_hex(5) + extension
         dest_file = dest_dir + file_name
-
         try:
             f = open(dest_file, "w+")
             print(authz_info)

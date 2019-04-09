@@ -15,10 +15,10 @@
 
 import sqlite3
 
-slr_request_code_tbl = "CREATE TABLE IF NOT EXISTS slr_request_code_tbl" \
-                       " (uuid text, ipaddr text, step1 text, step2 text, step3 text," \
-                       " authz_req_code text, authz_response_code text, license text, license_count text," \
-                       " tftp_server_ip text, tftp_server_path text, license_entitlement_tag text)"
+slr_request_code_tbl = "CREATE TABLE IF NOT EXISTS slr_request_code_tbl (uuid text, ipaddr text, step1 text," \
+                       " step2 text, step3 text, authz_req_code text, authz_response_code text, license text," \
+                       " license_count text, tftp_server_ip text, tftp_server_path text," \
+                       " license_entitlement_tag text, device_uuid text)"
 
 
 def create_sql_tables():
@@ -29,7 +29,7 @@ def create_sql_tables():
     cursor.execute(create_table)
 
     create_table = "CREATE TABLE IF NOT EXISTS device_store (uuid text, ipaddr text, username text," \
-                   " password text, sa_name text, va_name text, domain text)"
+                   " password text, sa_name text, va_name text, domain text, device_uuid text)"
     cursor.execute(create_table)
 
     create_table = "CREATE TABLE IF NOT EXISTS validation_store (uuid text, sa_name text, va_name text, domain text)"
@@ -37,7 +37,8 @@ def create_sql_tables():
 
     # including more fields to device_status_store
     create_table = "CREATE TABLE IF NOT EXISTS device_status_store (uuid text, ipaddr text," \
-                   " username text, password text, sa_name text, va_name text, domain text, status text)"
+                   " username text, password text, sa_name text, va_name text, domain text, status text," \
+                   " device_uuid text)"
     cursor.execute(create_table)
 
     create_table = "CREATE TABLE IF NOT EXISTS upload_info_store (uuid text, userid text, filename text, type text," \

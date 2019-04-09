@@ -57,63 +57,49 @@ export function getRegistrationStatus(uuid) {
 }
 
 export function isEnableButton(currentStatus, currentStepNumber) {
+  currentStatus = currentStatus.toLowerCase();
   switch (currentStepNumber) {
     case 2:
-      return currentStatus.toLowerCase() === (
-        deviceStatusKey.csv_file_uploaded.toLowerCase() ||
-        deviceStatusKey.s1c.toLowerCase() ||
-        deviceStatusKey.s2s.toLowerCase() ||
-        deviceStatusKey.s2c.toLowerCase() ||
-        deviceStatusKey.s3s.toLowerCase() ||
-        deviceStatusKey.s3c.toLowerCase() ||
-        deviceStatusKey.s4s.toLowerCase() ||
-        deviceStatusKey.s4c.toLowerCase()
-      );
+      return (currentStatus === deviceStatusKey.csv_file_uploaded
+              || currentStatus === deviceStatusKey.s1c);
 
     case 3:
-      return currentStatus.toLowerCase() === (
-        deviceStatusKey.s2c.toLowerCase() ||
-        deviceStatusKey.s3s.toLowerCase() ||
-        deviceStatusKey.s3c.toLowerCase() ||
-        deviceStatusKey.s4s.toLowerCase() ||
-        deviceStatusKey.s4c.toLowerCase()
-      );
+      return (currentStatus === deviceStatusKey.s2c
+              || currentStatus === deviceStatusKey.s3s
+              || currentStatus === deviceStatusKey.s3c
+              || currentStatus === deviceStatusKey.s4s
+              || currentStatus === deviceStatusKey.s4c);
 
     case 4:
-      return currentStatus.toLowerCase() === (
-        deviceStatusKey.s3c.toLowerCase() ||
-        deviceStatusKey.s4s.toLowerCase() ||
-        deviceStatusKey.s4c.toLowerCase()
-      );
+      return (currentStatus === deviceStatusKey.s3c
+              || currentStatus === deviceStatusKey.s4s
+              || currentStatus === deviceStatusKey.s4c
+              || currentStatus === deviceStatusKey.s3ci);
 
     case 5:
-      return currentStatus.toLowerCase() === (
-        deviceStatusKey.s4c.toLowerCase()
-      );
+      return currentStatus === deviceStatusKey.s4c;
 
     case 22:
-      return currentStatus.toLowerCase() === (
-        deviceStatusKey.s2s.toLowerCase() ||
-        deviceStatusKey.s2c.toLowerCase() ||
-        deviceStatusKey.s3s.toLowerCase() ||
-        deviceStatusKey.s3c.toLowerCase() ||
-        deviceStatusKey.s4s.toLowerCase() ||
-        deviceStatusKey.s4c.toLowerCase()
-      );
+      return (currentStatus === deviceStatusKey.s2s
+              || currentStatus === deviceStatusKey.s2c
+              || currentStatus === deviceStatusKey.s3s
+              || currentStatus === deviceStatusKey.s3c
+              || currentStatus === deviceStatusKey.s4s
+              || currentStatus === deviceStatusKey.s4c);
 
     case 32:
-      return currentStatus.toLowerCase() === (
-        deviceStatusKey.s3s.toLowerCase() ||
-        deviceStatusKey.s3c.toLowerCase() ||
-        deviceStatusKey.s4s.toLowerCase() ||
-        deviceStatusKey.s4c.toLowerCase()
-      );
+      return (currentStatus === deviceStatusKey.s3s
+              || currentStatus === deviceStatusKey.s3c
+              || currentStatus === deviceStatusKey.s4s
+              || currentStatus === deviceStatusKey.s4c);
+
+    case 33:
+      return (currentStatus.toLowerCase() === deviceStatusKey.s2x 
+              || currentStatus.toLowerCase() === deviceStatusKey.s2c);
 
     case 42:
-      return currentStatus.toLowerCase() === (
-        deviceStatusKey.s4s.toLowerCase() ||
-        deviceStatusKey.s4c.toLowerCase()
-      );
+      return (currentStatus === deviceStatusKey.s4s
+              || currentStatus === deviceStatusKey.s4c);
 
     default:
       return;
@@ -171,4 +157,8 @@ export function slrCurrentStep() {
     toSlrStep = 'slrStep4ApplyAuthKeys';
   }
   return toSlrStep;
+}
+
+export function sleep (time) {
+  return new Promise((resolve) => setTimeout(resolve, time));
 }
