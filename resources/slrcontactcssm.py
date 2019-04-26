@@ -19,6 +19,7 @@ from flask import json
 from flask_restful import Resource, reqparse
 from models.slr import slr
 from models.tokens import TokensModel
+import backoff
 
 accept = {"request": "accepted"}
 slr_req_tbl = "slr_request_code_tbl"
@@ -75,6 +76,16 @@ class slrcontactcssm(Resource):
             th.start()
             threads.append(th)
         return (accept), 201
+
+    def get(self, uuid):
+        data = slrcontactcssm.parser.parse_args()
+        print("OAuth token is:", data['oauth_token'])
+        return self.send_request_cssm(uuid, data['oauth_token'])
+
+    def post(self, uuid):
+        data = slrcontactcssm.parser.parse_args()
+        print("OAuth token is:", data['oauth_token'])
+        return self.send_request_cssm(uuid, data['oauth_token'])
     
     @classmethod
     def get_cssm_response(cls, domain_name, va_name, oauthToken, device_ip, uuid):
@@ -145,7 +156,11 @@ class slrcontactcssm(Resource):
             print(body)
             print("-----------------------------------------------------------------------------")
             a = json.dumps(body)
-            response = requests.request("POST", url, data=a, headers=headers, timeout=10)
+            # New call added for response with retries
+            response = slrcontactcssm.send_post_with_retries(url, a, headers, 30)
+            # response = requests.request("POST", url, data=a, headers=headers, timeout=10)
+            print("Now printing response.json & contents.decode as per old call...")
+            print(response.json())
             print(response.content.decode())
             if val[0][3] == s_done:
                 print("Already marked step as completed, don't proceed further. This can happen when rest call takes time. It is more of a race condition, seen once in my testing. Handling for the same")
@@ -176,22 +191,31 @@ class slrcontactcssm(Resource):
                 s.update_authz_response_code(slr_req_tbl, uuid, device_ip, 'Error in getting response from cssm')
             s.update_authz_response_code(slr_req_tbl, uuid, device_ip, final_msg)
         except Exception as e:
+            print("@@@@@ Printing Exception from main CSSM reserve license call...")
             print(e)
+            print('Error! Code: {c}, Message, {m}'.format(c = type(e).__name__, m = str(e)))
+            # Following code is added to catch HTTP ConnectionError (Wrong URL etc)
+            status = s_fail + str(type(e).__name__)
+            s.update_authz_response_code(slr_req_tbl, uuid, device_ip, 'Error in getting response from cssm')
+            s.update_status(slr_table, uuid, device_ip, status, step)
 
         rows = s.find_by_step_status(slr_req_tbl, uuid, s_start, step)
-        if (len(rows) == 0):
+        rows_completed = s.find_by_step_status(slr_req_tbl, uuid, s_done, step)
+        if (len(rows) == 0) and (len(rows_completed) != 0):
             response_update = {}
             response_update['status'] = resp_status_complete
             TokensModel.update(uuid, response_update, "upload_info_store")
         del(s)
 
-    def get(self, uuid):
-        data = slrcontactcssm.parser.parse_args()
-        print("OAuth token is:", data['oauth_token'])
-        return self.send_request_cssm(uuid, data['oauth_token'])
-
-    def post(self, uuid):
-        data = slrcontactcssm.parser.parse_args()
-        print("OAuth token is:", data['oauth_token'])
-        return self.send_request_cssm(uuid, data['oauth_token'])
+    # Added for retries
+    @classmethod
+    @backoff.on_exception(
+    backoff.expo,
+    requests.exceptions.RequestException,
+    max_tries=3,
+    giveup=lambda e: e.response is not None and e.response.status_code < 500
+    )
+    def send_post_with_retries(cls, url, data, headers, timeout):
+        response = requests.request("POST", url, data=data, headers=headers, timeout=timeout)
+        return response
 

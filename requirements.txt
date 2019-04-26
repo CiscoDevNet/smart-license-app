@@ -1,3 +1,4 @@
+backoff==1.8.0
 Flask==1.0.2
 Flask-Cors==3.0.6
 Flask-JWT==0.3.2
@@ -12,3 +13,4 @@ PyYAML==3.13
 requests==2.19.1
 schema==0.6.8
 tftpy==0.8.0
+werkzeug==0.14.1

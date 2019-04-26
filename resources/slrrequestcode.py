@@ -43,6 +43,7 @@ accept = {"request": "accepted"}
 step = "step1"
 resp_status_started = "S2s"
 resp_status_complete = "S2c"
+resp_status_failed = "S2f"
 delim = " "
 
 
@@ -136,9 +137,15 @@ class slrrequestcode(Resource):
         except Exception as e:
             print(e)
             s.update_status(slr_req_tbl, uuid, device_ip, str(e).split(":")[0], step)
+            # Added 04/16/19 - As export button and get auth key button is enabled eventhough
+            # connection to device timed-out
+            response_update = {}
+            response_update['status'] = resp_status_failed
+            TokensModel.update(uuid, response_update, "upload_info_store")
 
         rows = s.find_by_step_status(slr_req_tbl, uuid, s_start, step)
-        if (len(rows) == 0):
+        rows_completed = s.find_by_step_status(slr_req_tbl, uuid, s_done, step)
+        if (len(rows) == 0) and (len(rows_completed) != 0):
             response_update = {}
             response_update['status'] = resp_status_complete
             TokensModel.update(uuid, response_update, "upload_info_store")
