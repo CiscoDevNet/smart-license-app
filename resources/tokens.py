@@ -28,6 +28,11 @@ from netmiko import ConnectHandler
 from platform import system
 from subprocess import call
 from models.tokens import TokensModel
+from pathlib import Path
+import yaml
+import json
+
+home = str(Path.home())
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -190,20 +195,50 @@ class Tokens(Resource):
         device_type_dict = {}
         device_type_dict['device_type'] = None
         device_type_dict['exec_dlc'] = False
-        switches = ["C9300-24U", "WS-C3850X-24U", "C3850-24P", "WS-C3850-24P"]
-        routers = ["ISR4451-X/K9", "ISR4221/K9", "ISR4331/K9", "ISR4351/K9", "ISR4431/K9", "ISR4321/K9",
-                   "ISR4461/K9", "ISRV", "CSR1000V"]
+        device_type_dict['error'] = None
+        print("In method check_device_type....")
+        print(" ++++++++ device_type_dict DICT: ",json.dumps(device_type_dict, indent = 4))
+        print(" ++++++++ DEVICE STRING: ",device_type_dict['device_type'])
+        try:
+            with open(home+"/config.yaml", 'r') as yamlfile:
+                cfg = yaml.load(yamlfile)
+            routers = cfg['pids']['router_pids']
+            switches = cfg['pids']['switch_pids']
+            print(" ++++++++ routers string: ",routers)
+            print(" ++++++++ switches string: ",switches)
 
-        # Check device type
-        if pid in switches:
-            device_type_dict['device_type'] = "switch"
-        elif pid in routers:
-            device_type_dict['device_type'] = "router"
+            # Check device type
+            if pid in switches:
+                device_type_dict['device_type'] = "switch"
+            elif pid in routers:
+                device_type_dict['device_type'] = "router"
 
-        if device_type_dict['device_type']:
-            if ("3850-24P" or "3650" or "ISR" or "ASR" or "CSR") in pid:
-                device_type_dict['exec_dlc'] = True
-        return device_type_dict
+            if device_type_dict['device_type']:
+                print("====>>>>    Success: Got PID matched from config.yaml!   <<<<====\n\n")
+                if ("3850-24P" or "3650" or "ISR" or "ASR" or "CSR") in pid:
+                    device_type_dict['exec_dlc'] = True
+            print(" ++++++++ device_type_dict DICT: ",json.dumps(device_type_dict, indent = 4))
+            print(" ++++++++ DEVICE STRING: ",device_type_dict['device_type'])
+            print("Leaving method check_device_type...")
+            return device_type_dict
+        except Exception:
+            device_type_dict['error'] = 'PID not found! Check config.yaml file!'
+            raise
+
+        # switches = ["C9300-24U", "WS-C3850X-24U", "C3850-24P", "WS-C3850-24P"]
+        # routers = ["ISR4451-X/K9", "ISR4221/K9", "ISR4331/K9", "ISR4351/K9", "ISR4431/K9", "ISR4321/K9",
+        #            "ISR4461/K9", "ISRV", "CSR1000V"]
+        #
+        # # Check device type
+        # if pid in switches:
+        #     device_type_dict['device_type'] = "switch"
+        # elif pid in routers:
+        #     device_type_dict['device_type'] = "router"
+        #
+        # if device_type_dict['device_type']:
+        #     if ("3850-24P" or "3650" or "ISR" or "ASR" or "CSR") in pid:
+        #         device_type_dict['exec_dlc'] = True
+        # return device_type_dict
 
     @classmethod
     def execute_cli(cls, device_ip, username, password, cli):
@@ -460,14 +495,19 @@ class Tokens(Resource):
         sw_ver_str = None
         pid_str = None
         supported_device = False
+        # device_type_dict = {}
+        # device_type_dict['device_type'] = None
+        # device_type_dict['exec_dlc'] = None
+        # device_type_dict['error'] = None
 
         if Tokens.universal_ping(device_ip):
             try:
                 # get device verison
                 sw_version = Tokens.check_version(device_ip, username, password)
                 sw_ver_str = sw_version['version']
+                print(" ++++++++ SW VERSION STRING: ",sw_ver_str)
             except:
-                print("====>>>>    ERROR: Unable to get SW Version!", device_ip)
+                print("====>>>>    ERROR: Unable to fetch device SW Version!", device_ip)
                 response = {
                     'ipaddr': device_ip,
                     'username': username,
@@ -482,11 +522,14 @@ class Tokens(Resource):
 
             try:
                 # get device PID
+                # Start here define empty PID dctionary in case we are not able to get thru check_pid method
                 pid = Tokens.check_pid(device_ip, username, password)
                 pid_str = pid['pid']
-                device_type_dict = Tokens.check_device_type(pid_str)
+                print(" ++++++++ PID DICT: ",json.dumps(pid, indent = 4))
+                print(" ++++++++ PID STRING: ",pid_str)
+                # device_type_dict = Tokens.check_device_type(pid_str)
             except:
-                print("====>>>>    ERROR: Unable to get PID!", device_ip)
+                print("====>>>>    ERROR: Unable to fetch device PID!", device_ip)
                 response = {
                     'ipaddr': device_ip,
                     'username': username,
@@ -499,46 +542,34 @@ class Tokens(Resource):
                 config.ERROR = True
                 TokensModel.update(uuid, response, "device_status_store")
 
-            if sw_ver_str:
-            # Disabling PID check for SL Connected part
-            # if sw_ver_str and device_type_dict['device_type']:
-            #     print("==>> sw_ver_str & device_type_dict['device_type']", sw_ver_str, device_type_dict['device_type'])
-            #     if (StrictVersion(sw_ver_str) < StrictVersion("16.9")) and (device_type_dict['device_type'] == "switch"):
-            #         print("====>>>>    Unsupported switch type!", device_ip)
-            #         response = {
-            #             'ipaddr': device_ip,
-            #             'username': username,
-            #             'password': password,
-            #             'sa_name': sa,
-            #             'va_name': va,
-            #             'domain': domain,
-            #             'status': 'Unsupported Switch Version!'
-            #         }
-            #         config.ERROR = True
-            #         TokensModel.update(uuid, response, "device_status_store")
-            #     elif (StrictVersion(sw_ver_str) < StrictVersion("16.10")) and (device_type_dict['device_type'] == "router"):
-            #         print("====>>>>    Unsupported router type!", device_ip)
-            #         response = {
-            #             'ipaddr': device_ip,
-            #             'username': username,
-            #             'password': password,
-            #             'sa_name': sa,
-            #             'va_name': va,
-            #             'domain': domain,
-            #             'status': 'Unsupported Router Version!'
-            #         }
-            #         config.ERROR = True
-            #         TokensModel.update(uuid, response, "device_status_store")
-            #     else:
-            #         supported_device = True
-                supported_device = True
-                if supported_device:
-                    try:
-                        # get SL token first
-                        sl_token = Tokens.getSLToken(domain, va, oauth_token)
-                        sl_token_value = sl_token['sl_token']
-                    except:
-                        print("====>>>>    ERROR: Unable to get SL Token!", device_ip)
+            try:
+                # check if PID is found and if it is belongs to a router or a switch
+                device_type_dict = Tokens.check_device_type(pid_str)
+                print(" ++++++++ device_type_dict DICT: ",json.dumps(device_type_dict, indent = 4))
+                print(" ++++++++ DEVICE STRING: ",device_type_dict['device_type'])
+            except Exception as e:
+                print("====>>>>    ERROR: Unable to find PID! Check config.yaml file!", device_ip)
+                print('Error! Code: {c}, Message, {m}'.format(c = type(e).__name__, m = str(e)))
+                status_str = "Unable to parse config.yaml file! Check file contents! ERROR: " + type(e).__name__\
+                             + " - " + str(e)
+                response = {
+                    'ipaddr': device_ip,
+                    'username': username,
+                    'password': password,
+                    'sa_name': sa,
+                    'va_name': va,
+                    'domain': domain,
+                    'status': status_str
+                }
+                config.ERROR = True
+                TokensModel.update(uuid, response, "device_status_store")
+
+            # PID check for SL Connected part
+            if not config.ERROR:
+                if sw_ver_str and device_type_dict['device_type'] is not None:
+                    print("==>> sw_ver_str & device_type_dict['device_type']", sw_ver_str, device_type_dict['device_type'])
+                    if (StrictVersion(sw_ver_str) < StrictVersion("16.9")) and (device_type_dict['device_type'] == "switch"):
+                        print("====>>>>    Unsupported switch type!", device_ip)
                         response = {
                             'ipaddr': device_ip,
                             'username': username,
@@ -546,117 +577,71 @@ class Tokens(Resource):
                             'sa_name': sa,
                             'va_name': va,
                             'domain': domain,
-                            'status': sl_token['error']
+                            'status': 'Unsupported Switch Version!'
                         }
                         config.ERROR = True
                         TokensModel.update(uuid, response, "device_status_store")
-                    if sl_token_value:
-                        print("====>>>>    Configuring SL Token on the Device: ", device_ip, "    <<<<====\n\n")
-                        url = "https://"+device_ip+":443/restconf/data/cisco-smart-license:register-id-token"
-                        payload = "{\"cisco-smart-license:register-id-token\": {\"id-token\" :\"" + sl_token_value + "\""" }}"
-                        print("Printing Payload within registerToken...")
-                        print(payload)
-                        headers = {
-                            'FOXY-API-VERSION': "1",
-                            'Accept': "application/yang-data+json",
-                            'Content-Type': "application/yang-data+json",
-                            'Cache-Control': "no-cache"
+                    elif (StrictVersion(sw_ver_str) < StrictVersion("16.10")) and (device_type_dict['device_type'] == "router"):
+                        print("====>>>>    Unsupported router type!", device_ip)
+                        response = {
+                            'ipaddr': device_ip,
+                            'username': username,
+                            'password': password,
+                            'sa_name': sa,
+                            'va_name': va,
+                            'domain': domain,
+                            'status': 'Unsupported Router Version!'
                         }
-
+                        config.ERROR = True
+                        TokensModel.update(uuid, response, "device_status_store")
+                    else:
+                        supported_device = True
+                    # supported_device = True
+                    if supported_device:
                         try:
-                            response = requests.request("POST", url, auth=(username, password), data=payload,
-                                                        headers=headers, verify=False, timeout=5)
-                            print("Printing SL token config on device POST call response...")
-                            print(response.content.decode())
-                            print("Printing SL token config on device POST call response...")
-
-                            try:
-                                return_code = response.json()["cisco-smart-license:output"]["return-code"]
-                                mapped_return_code = return_code
-                                if return_code == "alreadyregistered":
-                                    mapped_return_code = "Registered"
-                                elif return_code == "registrationinprogress":
-                                    mapped_return_code = "InProgress"
-                                response_update = {
-                                    'ipaddr': device_ip,
-                                    'username': username,
-                                    'password': password,
-                                    'sa_name': sa,
-                                    'va_name': va,
-                                    'domain': domain,
-                                    'status': mapped_return_code
-                                }
-                                TokensModel.update(uuid, response_update, "device_status_store")
-                                print("====>>>>    Success: SL Token configured on the device: ",
-                                      device_ip, "    <<<<====\n\n")
-                            except:
-                                print("====>>>>    ERROR: Unable to configure SL Token on the device: ",
-                                      device_ip, " Error:  %s" % response.text)
-                                response_update = {
-                                    'ipaddr': device_ip,
-                                    'username': username,
-                                    'password': password,
-                                    'sa_name': sa,
-                                    'va_name': va,
-                                    'domain': domain,
-                                    'status': 'Token config: Request Failed'
-                                }
-                                config.ERROR = True
-                                TokensModel.update(uuid, response_update, "device_status_store")
+                            # get SL token first
+                            sl_token = Tokens.getSLToken(domain, va, oauth_token)
+                            sl_token_value = sl_token['sl_token']
                         except:
-                            print("==>> ERROR: SL token config on device POST call timed out...")
-                            response_update = {
+                            print("====>>>>    ERROR: Unable to get SL Token!", device_ip)
+                            response = {
                                 'ipaddr': device_ip,
                                 'username': username,
                                 'password': password,
                                 'sa_name': sa,
                                 'va_name': va,
                                 'domain': domain,
-                                'status': 'Token config: POST Request timed out'
+                                'status': sl_token['error']
                             }
                             config.ERROR = True
-                            TokensModel.update(uuid, response_update, "device_status_store")
-                    # After token registration execute DLC
-                    if device_type_dict['exec_dlc']:
-                        dlc_completed = False
-                        dlc_confirmed = False
-                        dlc_successful = False
-                        dlc_ctr = 0
+                            TokensModel.update(uuid, response, "device_status_store")
+                        if sl_token_value:
+                            print("====>>>>    Configuring SL Token on the Device: ", device_ip, "    <<<<====\n\n")
+                            url = "https://"+device_ip+":443/restconf/data/cisco-smart-license:register-id-token"
+                            payload = "{\"cisco-smart-license:register-id-token\": {\"id-token\" :\"" + sl_token_value + "\""" }}"
+                            print("Printing Payload within registerToken...")
+                            print(payload)
+                            headers = {
+                                'FOXY-API-VERSION': "1",
+                                'Accept': "application/yang-data+json",
+                                'Content-Type': "application/yang-data+json",
+                                'Cache-Control': "no-cache"
+                            }
 
-                        while (not dlc_completed) and (dlc_ctr < 3):
-                            time.sleep(2)
-                            dlc_ctr += 1
-                            print("++>> Executing DLC on Device: ", device_ip)
                             try:
-                                device_output = Tokens.execute_cli(device_ip, username,
-                                                                   password, "license smart conversion start")
-                                show_output = Tokens.execute_cli(device_ip, username,
-                                                                 password, "sh license status | sec License Conversion")
-                                # Check DLC is successful or not
-                                dlc_completed = Tokens.check_dlc(device_output)
-                                if dlc_completed:
-                                    # Verify DLC on the device
-                                    dlc_confirmed = Tokens.check_dlc(show_output)
-                                    if dlc_confirmed:
-                                        dlc_successful = True
-                                    else:
-                                        print("TRY: ", dlc_ctr, "====>>>>    ERROR: Not able to confirm DLC on device: "
-                                              , device_ip, "    <<<<====\n\n")
-                                        response_update = {
-                                            'ipaddr': device_ip,
-                                            'username': username,
-                                            'password': password,
-                                            'sa_name': sa,
-                                            'va_name': va,
-                                            'domain': domain,
-                                            'status': 'DLC Confirmation Failed!'
-                                        }
-                                        config.ERROR = True
-                                        TokensModel.update(uuid, response_update, "device_status_store")
-                                        dlc_successful = False
-                                else:
-                                    print("TRY: ", dlc_ctr, "====>>>>    ERROR: Not able to execute DLC: ",
-                                          device_ip, "    <<<<====\n\n")
+                                response = requests.request("POST", url, auth=(username, password), data=payload,
+                                                            headers=headers, verify=False, timeout=5)
+                                print("Printing SL token config on device POST call response...")
+                                print(response.content.decode())
+                                print("Printing SL token config on device POST call response...")
+
+                                try:
+                                    return_code = response.json()["cisco-smart-license:output"]["return-code"]
+                                    mapped_return_code = return_code
+                                    if return_code == "alreadyregistered":
+                                        mapped_return_code = "Registered"
+                                    elif return_code == "registrationinprogress":
+                                        mapped_return_code = "InProgress"
                                     response_update = {
                                         'ipaddr': device_ip,
                                         'username': username,
@@ -664,14 +649,27 @@ class Tokens(Resource):
                                         'sa_name': sa,
                                         'va_name': va,
                                         'domain': domain,
-                                        'status': 'DLC Execution Failed!'
+                                        'status': mapped_return_code
+                                    }
+                                    TokensModel.update(uuid, response_update, "device_status_store")
+                                    print("====>>>>    Success: SL Token configured on the device: ",
+                                          device_ip, "    <<<<====\n\n")
+                                except:
+                                    print("====>>>>    ERROR: Unable to configure SL Token on the device: ",
+                                          device_ip, " Error:  %s" % response.text)
+                                    response_update = {
+                                        'ipaddr': device_ip,
+                                        'username': username,
+                                        'password': password,
+                                        'sa_name': sa,
+                                        'va_name': va,
+                                        'domain': domain,
+                                        'status': 'Token config: Request Failed'
                                     }
                                     config.ERROR = True
                                     TokensModel.update(uuid, response_update, "device_status_store")
-                                    dlc_successful = False
                             except:
-                                print("TRY: ", dlc_ctr, "====>>>>    ERROR: Not able to execute CLI on: ", device_ip,
-                                      "    <<<<====\n\n")
+                                print("==>> ERROR: SL token config on device POST call timed out...")
                                 response_update = {
                                     'ipaddr': device_ip,
                                     'username': username,
@@ -679,37 +677,104 @@ class Tokens(Resource):
                                     'sa_name': sa,
                                     'va_name': va,
                                     'domain': domain,
-                                    'status': 'CLI Execution Failed!'
+                                    'status': 'Token config: POST Request timed out'
                                 }
                                 config.ERROR = True
                                 TokensModel.update(uuid, response_update, "device_status_store")
-                                dlc_successful = False
-                        if dlc_successful:
-                            # DLC is executed successfully. Update status
-                            response_update = {
+                        # After token registration execute DLC
+                        if device_type_dict['exec_dlc']:
+                            dlc_completed = False
+                            dlc_confirmed = False
+                            dlc_successful = False
+                            dlc_ctr = 0
+
+                            while (not dlc_completed) and (dlc_ctr < 3):
+                                time.sleep(2)
+                                dlc_ctr += 1
+                                print("++>> Executing DLC on Device: ", device_ip)
+                                try:
+                                    device_output = Tokens.execute_cli(device_ip, username,
+                                                                       password, "license smart conversion start")
+                                    show_output = Tokens.execute_cli(device_ip, username,
+                                                                     password, "sh license status | sec License Conversion")
+                                    # Check DLC is successful or not
+                                    dlc_completed = Tokens.check_dlc(device_output)
+                                    if dlc_completed:
+                                        # Verify DLC on the device
+                                        dlc_confirmed = Tokens.check_dlc(show_output)
+                                        if dlc_confirmed:
+                                            dlc_successful = True
+                                        else:
+                                            print("TRY: ", dlc_ctr, "====>>>>    ERROR: Not able to confirm DLC on device: "
+                                                  , device_ip, "    <<<<====\n\n")
+                                            response_update = {
+                                                'ipaddr': device_ip,
+                                                'username': username,
+                                                'password': password,
+                                                'sa_name': sa,
+                                                'va_name': va,
+                                                'domain': domain,
+                                                'status': 'DLC Confirmation Failed!'
+                                            }
+                                            config.ERROR = True
+                                            TokensModel.update(uuid, response_update, "device_status_store")
+                                            dlc_successful = False
+                                    else:
+                                        print("TRY: ", dlc_ctr, "====>>>>    ERROR: Not able to execute DLC: ",
+                                              device_ip, "    <<<<====\n\n")
+                                        response_update = {
+                                            'ipaddr': device_ip,
+                                            'username': username,
+                                            'password': password,
+                                            'sa_name': sa,
+                                            'va_name': va,
+                                            'domain': domain,
+                                            'status': 'DLC Execution Failed!'
+                                        }
+                                        config.ERROR = True
+                                        TokensModel.update(uuid, response_update, "device_status_store")
+                                        dlc_successful = False
+                                except:
+                                    print("TRY: ", dlc_ctr, "====>>>>    ERROR: Not able to execute CLI on: ", device_ip,
+                                          "    <<<<====\n\n")
+                                    response_update = {
                                         'ipaddr': device_ip,
                                         'username': username,
                                         'password': password,
                                         'sa_name': sa,
                                         'va_name': va,
                                         'domain': domain,
-                                        'status': 'Registered / DLC Executed'
-                            }
-                            TokensModel.update(uuid, response_update, "device_status_store")
-                            print("++>> Done with DLC on Device: ", device_ip)
-            else:
-                print("==>> Unsupported Network Device type...")
-                response = {
-                        'ipaddr': device_ip,
-                        'username': username,
-                        'password': password,
-                        'sa_name': sa,
-                        'va_name': va,
-                        'domain': domain,
-                        'status': 'Unsupported Device PID!'
-                }
-                config.ERROR = True
-                TokensModel.update(uuid, response, "device_status_store")
+                                        'status': 'CLI Execution Failed!'
+                                    }
+                                    config.ERROR = True
+                                    TokensModel.update(uuid, response_update, "device_status_store")
+                                    dlc_successful = False
+                            if dlc_successful:
+                                # DLC is executed successfully. Update status
+                                response_update = {
+                                            'ipaddr': device_ip,
+                                            'username': username,
+                                            'password': password,
+                                            'sa_name': sa,
+                                            'va_name': va,
+                                            'domain': domain,
+                                            'status': 'Registered / DLC Executed'
+                                }
+                                TokensModel.update(uuid, response_update, "device_status_store")
+                                print("++>> Done with DLC on Device: ", device_ip)
+                else:
+                    print("==>> Unsupported Network Device type...")
+                    response = {
+                            'ipaddr': device_ip,
+                            'username': username,
+                            'password': password,
+                            'sa_name': sa,
+                            'va_name': va,
+                            'domain': domain,
+                            'status': 'Unsupported Device PID!'
+                    }
+                    config.ERROR = True
+                    TokensModel.update(uuid, response, "device_status_store")
         else:
             print("No connectivity to the device...")
             response_update = {

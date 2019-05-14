@@ -7,6 +7,7 @@ Flask-SQLAlchemy==2.3.2
 netmiko==2.3.0
 numpy==1.15.2
 pandas==0.23.4
+pandas-schema==0.3.2
 pyOpenSSL==18.0.0
 pyping==0.0.5
 PyYAML==3.13
