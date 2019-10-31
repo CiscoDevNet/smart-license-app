@@ -14,4 +14,4 @@ PyYAML==3.13
 requests==2.19.1
 schema==0.6.8
 tftpy==0.8.0
-werkzeug==0.14.1
+werkzeug==0.15.3
