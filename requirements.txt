@@ -11,7 +11,7 @@ pandas-schema==0.3.2
 pyOpenSSL==18.0.0
 pyping==0.0.5
 PyYAML==3.13
-requests==2.19.1
+requests==2.20.0
 schema==0.6.8
 tftpy==0.8.0
 werkzeug==0.14.1
