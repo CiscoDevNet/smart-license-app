@@ -25,11 +25,12 @@ def create_sql_tables():
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
-    create_table = "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username text, password text)"
+    create_table = "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username text, password text, " \
+                   "pswd_hint text)"
     cursor.execute(create_table)
 
     create_table = "CREATE TABLE IF NOT EXISTS device_store (uuid text, ipaddr text, username text," \
-                   " password text, sa_name text, va_name text, domain text, device_uuid text)"
+                   " password text, sa_name text, va_name text, domain text, device_uuid text,  dlc_needed text)"
     cursor.execute(create_table)
 
     create_table = "CREATE TABLE IF NOT EXISTS validation_store (uuid text, sa_name text, va_name text, domain text)"
@@ -44,6 +45,17 @@ def create_sql_tables():
     create_table = "CREATE TABLE IF NOT EXISTS upload_info_store (uuid text, userid text, filename text, type text," \
                    " timestamp text, status text)"
     cursor.execute(create_table)
+
+    # dlc conversion table to execute dlc on device
+    create_table = "CREATE TABLE IF NOT EXISTS dlc_store (uuid text, ipaddr text, udiPid text, udiSerialNumber text, " \
+                   "softwareTagIdentifier text, conversionType text, conversionEncodingType text, conversionString " \
+                   "text, conversion_count text, slr_type text)"
+    cursor.execute(create_table)
+
+    #dlc status per device table
+    create_table = "CREATE TABLE IF NOT EXISTS dlc_status_store (uuid text, ipaddr text, dlc_status text)"
+    cursor.execute(create_table)
+
     cursor.execute(slr_request_code_tbl)
 
     connection.commit()
