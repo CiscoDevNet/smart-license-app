@@ -130,7 +130,7 @@ class SlrStep4ApplyAuthKeysStatus extends Component {
   }
 
   fetchRegisterStatus(url) {
-    return fetch(url);
+    return fetch(url,{headers:{}});
   }
 
   showLoadingModal() {
@@ -207,15 +207,6 @@ class SlrStep4ApplyAuthKeysStatus extends Component {
 
     return (
       <div>
-        <div>
-          <nav aria-label="breadcrumb">
-            <ol className="breadcrumb">
-              <li className="breadcrumb-item " aria-current="page">Home</li>
-              <li className="breadcrumb-item active" aria-current="page"> SLR Step 4: Applying Authorization Codes Status Devices</li>
-            </ol>
-          </nav>
-        </div>
-
         <div className="container">
           <div className="slrInfo" onClick={this.infodivclickS4S}>
             <a id="slrinfoPopuplink" href="#click">
@@ -318,7 +309,7 @@ class SlrStep4ApplyAuthKeysStatus extends Component {
                     </div>
                     <div className="actionButtonGroup3">
                       <button className="btn btn-primary"
-                              onClick={ () => this.props.history.push('/') }
+                              onClick={ () => this.props.history.push('/Home') }
                       >Home
                       </button>
                       <UltimatePaginationBootstrap

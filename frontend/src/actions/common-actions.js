@@ -20,6 +20,7 @@ import { history } from '../helpers/history';
 export const commonAction = {
     goToHome,
     cancelClicked,
+    logout,
     reqCodeGen,
     nextStep3,
     getAuthKeys,
@@ -29,14 +30,20 @@ export const commonAction = {
 
 function goToHome() {
     console.log('Home Clicked !!!');
-    history.push('/');
+    history.push('/Home');
 }
 
 function cancelClicked() {
     console.log('Cancel Clicked !!!');
-    history.push('/');
+    history.push('/Home');
 }
 
+function logout() {
+    console.log('Logout Clicked !!!');
+    localStorage.removeItem('loggedInUser');
+    history.push('/AppLogin');
+
+}
 
 // Temp SLR 
 

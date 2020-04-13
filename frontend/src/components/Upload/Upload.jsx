@@ -72,15 +72,6 @@ class Upload extends React.Component {
     console.log('Render called from:Upload');
     return (
       <div>
-        <div>
-          <nav aria-label="breadcrumb">
-            <ol className="breadcrumb">
-              <li className="breadcrumb-item " aria-current="page">Home</li>
-              <li className="breadcrumb-item active" aria-current="page">Upload</li>
-            </ol>
-          </nav>
-        </div>
-
         <div className="container">
           <section>
            <h4>Device Details Upload</h4><hr/>

@@ -104,7 +104,7 @@ class UploadedDevices extends React.Component {
     let uuid = uploadRsp.uuid;
     let uri = `/devicesuploaded/${uuid}/${pageNumber}`;
     console.log('UUID: ' + uuid + ',  Page: ' + pageNumber + ', URI: ' + uri);
-    fetch(uri)
+    fetch(uri,{headers: {}})
       .then(handleResponse)
       .then(devicesUploaded => {
         console.log("devices:", devicesUploaded.devices);
@@ -152,17 +152,9 @@ class UploadedDevices extends React.Component {
 
     return (
       <div>
-        <div>
-          <nav aria-label="breadcrumb">
-            <ol className="breadcrumb">
-              <li className="breadcrumb-item " aria-current="page">Home</li>
-              <li className="breadcrumb-item active" aria-current="page">Upload Devices</li>
-            </ol>
-          </nav>
-        </div>
-
         <div className="container">
           <section>
+            <br/>
             <h4> Device Details</h4><hr/>
           </section>
           <div className="card">
@@ -185,7 +177,7 @@ class UploadedDevices extends React.Component {
                 </tbody>
               </table>
               <div className="actionButtonGroup3">
-                <button className="btn btn-primary" onClick= {() => {this.props.history.push('/')}}>Cancel</button>
+                <button className="btn btn-primary" onClick= {() => {this.props.history.push('/Home')}}>Cancel</button>
                 <UltimatePaginationBootstrap
                   totalPages={ this.state.totalPages }
                   currentPage={ this.state.page }

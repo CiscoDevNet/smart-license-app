@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 import { Button } from "react-bootstrap";
 import { commonAction } from '../../actions';
 import '../../resources/css/Upload.css';
-import axios from 'axios';
 import { toaster } from "../../helpers/toasterHelper";
 import Modal from 'react-bootstrap4-modal';
 import { LoginPopup } from "../Login/LoginPopup";
@@ -192,13 +191,21 @@ class SlrImport extends React.Component {
         }
       }
 
-      handleFileImportSendToServer(file) {
+    handleFileImportSendToServer(file) {
         this.showLoadingModal();
         console.log('SLR JSON File Import - File:' + file.name);
         const data = new FormData()
         data.append('file', file, file.name);
         data.append('oauth_token', 'x')
-        return axios.post(`/slr/importcodes`, data)
+        const requestOptions = {
+            method: 'POST',
+            headers:{
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
+            },
+            body: data
+         };
+        return fetch(`/slr/importcodes`, requestOptions)
         .then(this.handleFileImportSendToServerResponse)
         .then(slrImportResponse => {
             console.log('importRsp:' + JSON.stringify(slrImportResponse));
@@ -209,22 +216,21 @@ class SlrImport extends React.Component {
             return slrImportResponse;
         });
     }
-    
+
     handleFileImportSendToServerResponse(response) {
-        console.log("Handle SLR Import Resp !!" + JSON.stringify(response))
-    
-        if (response.error) {
-            console.log("Handle SLR Import Resp - No ERROR");
-            return Promise.reject(response.error);
+        return response.text().then(text => {
+        const data = text && JSON.parse(text);
+        console.log('Response Type: ' + response.type + ',  Status: ' + response.ok);
+        if (!response.ok) {
+            const error = (data && data.message) || response.statusText;
+            return Promise.reject(error);
         }
-        console.log("Handle SLR Import Resp - No ERROR");
-    
-        if (response.data) {
-            const data = response.data;
-            console.log('JSON.parse(data): ' + JSON.stringify(data))
-            return data;
-        }
+        console.log("Handle CSV Res - No ERROR");
+        console.log('JSON.parse(data): ' + JSON.stringify(data))
+        return data;
+     });
     }
+
     
     handleSlrImportGetAuthKeyClick(event) {
         event.preventDefault();
@@ -359,7 +365,7 @@ class SlrImport extends React.Component {
         console.log('calling exportAuthCodesToAFile:', this.state.uuid);
         this.showLoadingModal();
     
-        const expAuthCodeRespObj = await fetch(`/slr/exportauthcodes/${this.state.uuid}`);
+        const expAuthCodeRespObj = await fetch(`/slr/exportauthcodes/${this.state.uuid}`, { headers:{} });
         const expAuthCodeResp = await expAuthCodeRespObj.json();
         const actualExpResp = {
           status: expAuthCodeRespObj.status,
@@ -417,14 +423,6 @@ class SlrImport extends React.Component {
     render() {
         return (
             <div>
-                <div>
-                    <nav aria-label="breadcrumb">
-                        <ol className="breadcrumb">
-                            <li className="breadcrumb-item " aria-current="page">Home</li>
-                            <li className="breadcrumb-item active" aria-current="page">SLR Import</li>
-                        </ol>
-                    </nav>
-                </div>
                 <div className="container">
                     <section>
                         <h4>SLR Import</h4><hr/>

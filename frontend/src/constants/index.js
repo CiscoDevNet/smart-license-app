@@ -20,3 +20,5 @@ export * from './auth-constants';
 export * from './upload-constants';
 export * from './register-constant';
 export * from './common-constants';
+export * from './userRegister-constants';
+export * from './password-constants';

@@ -18,8 +18,6 @@
 import { alertAction } from './';
 import { registerConstant } from '../constants';
 import { history } from '../helpers/history';
-
-import axios from 'axios';
 import { uploadConstant } from "../constants/upload-constants";
 
 export const RegisterAction = {
@@ -59,8 +57,15 @@ function register() {
 
 function registerProcess() {
   console.log('CSV File Upload Service - begin');
-
-  return axios.post(`/`)
+  const requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
+                        'Access-Control-Allow-Headers': 'Origin, Content-Type, X-Auth-Token'
+                      }
+   };
+  return fetch(`/`,requestOptions)
     .then(handleFileUploadToServerResponse)
     .then(uploadResponse => {
       console.log('uploadRsp:' + JSON.stringify(uploadResponse));
@@ -72,17 +77,18 @@ function registerProcess() {
 }
 
 function handleFileUploadToServerResponse(response) {
-  console.log("Handle CSV Res !!" + JSON.stringify(response));
-
-  if (response.error) {
-    console.log();
-    return Promise.reject(response.error);
-  }
-  console.log("Handle CSV Res - No ERROR");
-
-  if (response.data) {
-    const data = response.data;
-    console.log('JSON.parse(data): ' + JSON.stringify(data));
-    return data;
-  }
+  return response.text().then(text => {
+       const data = text && JSON.parse(text);
+       if (!response.ok) {
+            if (response.status === 401) {
+                history.push('/AppLogin')
+                localStorage.removeItem('loggedInUser');
+            }
+            const error = (data && data.message) || response.statusText;
+            return Promise.reject(error);
+        }
+        console.log("Handle CSV Res - No ERROR");
+        console.log('JSON.parse(data): ' + JSON.stringify(data));
+        return data;
+      });
 }

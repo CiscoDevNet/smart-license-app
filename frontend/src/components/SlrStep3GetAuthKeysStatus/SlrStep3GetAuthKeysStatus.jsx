@@ -137,7 +137,7 @@ class SlrStep3GetAuthKeysStatus extends Component {
   }
 
   fetchRegisterStatus(url) {
-    return fetch(url);
+    return fetch(url, {headers:{}});
   }
 
   showLoadingModal() {
@@ -207,18 +207,6 @@ class SlrStep3GetAuthKeysStatus extends Component {
 
     return (
       <div>
-        <div>
-          <nav aria-label="breadcrumb">
-            <ol className="breadcrumb">
-              <li className="breadcrumb-item " aria-current="page">Home</li>
-              <li className="breadcrumb-item active" aria-current="page"> SLR Step 3: Getting Auth
-                Keys Status
-                Devices
-              </li>
-            </ol>
-          </nav>
-        </div>
-
         <div className="container">
           <div className="slrInfo" onClick={this.infodivclickS3S}>
             <a id="slrinfoPopuplink" href="#click">
@@ -328,7 +316,7 @@ class SlrStep3GetAuthKeysStatus extends Component {
                       }
                     </div>
                     <div className="actionButtonGroup4">
-                      <button className="btn btn-primary" onClick={ () => this.props.history.push('/') } >Home</button>
+                      <button className="btn btn-primary" onClick={ () => this.props.history.push('/Home') } >Home</button>
                       <UltimatePaginationBootstrap
                         className="customPagination"
                         totalPages={ this.state.totalPages }

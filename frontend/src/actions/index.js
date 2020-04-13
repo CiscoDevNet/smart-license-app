@@ -20,3 +20,8 @@ export * from './alert-actions';
 export * from './auth-actions';
 export * from './common-actions';
 export * from './upload-actions';
+export * from './userRegister-actions';
+export * from './login-actions';
+export * from './interceptor'
+export * from './passwordReset-actions'
+export * from './passwordForgot-action'
