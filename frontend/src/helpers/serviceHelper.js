@@ -53,7 +53,7 @@ export function getAuthToken(user) {
 export function getRegistrationStatus(uuid) {
   const url = `/registration/status/${ uuid }`;
   console.log({ url });
-  return fetch(url);
+  return fetch(url,{headers:{}});
 }
 
 export function isEnableButton(currentStatus, currentStepNumber) {

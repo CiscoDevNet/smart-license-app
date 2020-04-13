@@ -158,17 +158,6 @@ class RegistrationStatus extends Component {
 
     return (
       <div>
-        <div>
-          <nav aria-label="breadcrumb">
-            <ol className="breadcrumb">
-              <li className="breadcrumb-item " aria-current="page">Home</li>
-              <li className="breadcrumb-item active" aria-current="page">Upload Devices /Register
-                Devices
-              </li>
-            </ol>
-          </nav>
-        </div>
-
         {/*Container*/ }
         <div className="container">
           <div className="gridDisplay">
@@ -201,7 +190,7 @@ class RegistrationStatus extends Component {
                       <button className="btn btn-primary"
                               onClick={ () => {
                                 console.log('button Clicked!')
-                                this.props.history.push('/')
+                                this.props.history.push('/Home')
                               }
                               }>Home
                       </button>

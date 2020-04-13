@@ -21,6 +21,7 @@ import { registerConstant } from '../../constants/register-constant';
 import { commonConstants, deviceStatus } from "../../constants/common-constants";
 import '../../resources/css/Home.css';
 import { slrConstant } from '../../constants/slr-constants';
+import { commonAction } from '../../actions';
 import '../../resources/css/slrSteps.css';
 
 class Home extends Component {
@@ -28,10 +29,16 @@ class Home extends Component {
     super(props);
     this.state = { type: null };
     this.handleStart = this.handleStart.bind(this);
+    this.handleLogoutClick = this.handleLogoutClick.bind(this);
+  }
+
+  handleLogoutClick(event) {
+    event.preventDefault();
+    commonAction.logout();
   }
 
   getPreviousRegistrations(url) {
-    return fetch(url);
+    return fetch(url, {headers:{}});
   }
 
   async componentWillMount() {
@@ -47,7 +54,7 @@ class Home extends Component {
         })
       }
     } catch (e) {
-
+        console.log(e)
     }
   }
 
@@ -179,14 +186,10 @@ class Home extends Component {
   }
     return (
       <div>
-        <div>
-          <nav aria-label="breadcrumb">
-            <ol className="breadcrumb">
-              <li className="breadcrumb-item active" aria-current="page">Home</li>
-            </ol>
-          </nav>
+        <br/>
+        <div class="col-12 text-right">
+            <button className="btn btn-primary" onClick={ this.handleLogoutClick }> Logout </button>
         </div>
-
 
         <div className="container">
           <div className="registration">

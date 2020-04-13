@@ -146,7 +146,7 @@ class SlrStep2ReqCode extends React.Component {
     console.log('props:',this.props );
     let uri = `/devicesuploaded/${uuid}/${pageNumber}`;
     console.log('UUID: ' + uuid + ',  Page: ' + pageNumber + ', URI: ' + uri);
-    fetch(uri)
+    fetch(uri, { headers: {} })
       .then(handleResponse)
       .then(devicesUploaded => {
         console.log("devices:", devicesUploaded.devices);
@@ -169,7 +169,7 @@ class SlrStep2ReqCode extends React.Component {
     const { uuid } = this.props;
     const url = `/slr/device/reqcode/${uuid}`;
   console.log({ url });
-    return fetch(url);
+    return fetch(url,{headers:{}});
   }
 
   async handleGenerateReqCodes(event) {
@@ -240,18 +240,6 @@ class SlrStep2ReqCode extends React.Component {
             </div>
           </Modal>
         </div>
-
-        <div>
-          <nav aria-label="breadcrumb">
-            <ol className="breadcrumb">
-              <li className="breadcrumb-item " aria-current="page">Home</li>
-              <li className="breadcrumb-item active" aria-current="page">SLR Step 2: Generating
-                Request Code on Devices
-              </li>
-            </ol>
-          </nav>
-        </div>
-
 
         <div className="container">
         <div className="slrInfo" onClick={this.infodivclickS2}>
@@ -336,7 +324,7 @@ class SlrStep2ReqCode extends React.Component {
                     </div>
                     <div className="actionButtonGroup3">
                       <button className="btn btn-primary"
-                              onClick={ () => this.props.history.push('/') }
+                              onClick={ () => this.props.history.push('/Home') }
                       >Home
                       </button>
                       <UltimatePaginationBootstrap

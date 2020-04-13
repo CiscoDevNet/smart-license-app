@@ -18,7 +18,6 @@
 import { alertAction } from './';
 import { commonConstants, uploadConstant } from '../constants';
 import { history } from '../helpers/history';
-import axios from 'axios';
 
 export const uploadAction = {
     upload
@@ -62,12 +61,20 @@ function upload(file, type) {
 
 function fileUploadToServer(file,type) {
     console.log('CSV File Upload Service - File type:',type);
-
     const data = new FormData()
     data.append('file', file, file.name);
     data.append('registration_type', type || 'sl');
     data.append('oauth_token', 'x')
-    return axios.post(`/upload`, data)
+     const requestOptions = {
+            method: 'POST',
+            headers:{
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
+            },
+            body: data
+    };
+
+    return fetch(`/upload`, requestOptions)
     .then(handleFileUploadToServerResponse)
     .then(uploadResponse => {
         console.log('uploadRsp:' + JSON.stringify(uploadResponse));
@@ -79,17 +86,19 @@ function fileUploadToServer(file,type) {
 }
 
 function handleFileUploadToServerResponse(response) {
-    console.log("Handle CSV Res !!" + JSON.stringify(response))
-
-    if (response.error) {
-        console.log();
-        return Promise.reject(response.error);
-    }
-    console.log("Handle CSV Res - No ERROR");
-
-    if (response.data) {
-        const data = response.data;
+    return response.text().then(text => {
+        const data = text && JSON.parse(text);
+        console.log('Response Type: ' + response.type + ',  Status: ' + response.ok);
+        if (!response.ok) {
+            if (response.status === 401) {
+                history.push('/AppLogin')
+                localStorage.removeItem('loggedInUser');
+            }
+            const error = (data && data.message) || response.statusText;
+            return Promise.reject(error);
+        }
+        console.log("Handle CSV Res - No ERROR");
         console.log('JSON.parse(data): ' + JSON.stringify(data))
         return data;
-    }
+     });
 }

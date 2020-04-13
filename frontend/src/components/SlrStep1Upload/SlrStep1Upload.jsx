@@ -71,16 +71,6 @@ class SlrStep1Upload extends React.Component {
   render() {
     return (
       <div>
-        <div>
-          <nav aria-label="breadcrumb">
-            <ol className="breadcrumb">
-              <li className="breadcrumb-item " aria-current="page">Home</li>
-              <li className="breadcrumb-item active" aria-current="page">SLR Upload</li>
-            </ol>
-          </nav>
-        </div>
-
-
         <div className="container">
           <div className="slrInfo" onClick={this.infodivclick}>
             <a id="slrinfoPopuplink" href="#click">
@@ -99,8 +89,9 @@ class SlrStep1Upload extends React.Component {
                      activeStep={ 0 }/>
           </div>
           <div className="card">
+            <br/>
             <div className="card-header">
-              <h4>SLR Step 1: Device Details Upload</h4>
+               <h4>SLR Step 1: Device Details Upload</h4>
             </div>
             <div className="card-body">
               <div className="uploadBody">

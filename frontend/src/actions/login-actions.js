@@ -17,20 +17,21 @@
 
 import { authConstant } from '../constants/auth-constants';
 import { alertAction } from './';
+import { history } from '../helpers'
 
-export const authAction = {
+export const loginAction = {
     login
 }
 
-function login(username, password, actionAfterLogin) {
+export var JWTToken = ""
+function login(username, password) {
     return dispatch => {
-        authenticateUsingService(username, password)
+        authenticateLogIn(username, password)
         .then(
             user => {
                 dispatch (success(user));
-                localStorage.setItem('user', user);
-                //history.push('/');
-                dispatch(actionAfterLogin)
+                localStorage.setItem('loggedInUser', user);
+                history.push('/Home')
             },
             error => {
                 dispatch (failure(error));
@@ -42,71 +43,57 @@ function login(username, password, actionAfterLogin) {
     function failure(error) { return { type: authConstant.LOGIN_FAILURE, error } }
 }
 
-function authenticateUsingService(username, password) {
-    console.log("Login Service !!")
+function authenticateLogIn(username, password) {
+    console.log("Login to app")
     const requestOptions = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json',
-                    'rejectUnauthorized': 'false',
-                    'requestCert': 'false',
-                    'agent': 'false',
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Origin, Content-Type, X-Auth-Token'
-                },
-        //headers: { 'Content-Type': 'application/x-www-form-urlencoded'},
-        body: JSON.stringify({ username, password })
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
+                        'Access-Control-Allow-Headers': 'Origin, Content-Type, X-Auth-Token'
+                      },
+            body: JSON.stringify({ username, password })
     };
 
-    return fetch(`/authen`, requestOptions)
+    return fetch(`/auth`, requestOptions)
         .then(handleResponse)
         .then(user => {
-            console.log('User:' + JSON.stringify(user));
+            console.log('loggedInUser:' + JSON.stringify(user));
             if (user.token) {
-                localStorage.setItem('user', JSON.stringify(user));
+                localStorage.setItem('loggedInUser', JSON.stringify(user));
             }
-
-            return prepareUserInfo(username, user);
+            return prepareLoginInfo(username, user);
         });
 }
 
 function handleResponse(response) {
-    console.log("Handle Res !!" + JSON.stringify(response))
     return response.text().then(text => {
-        console.log("Text: " + text);
         const data = text && JSON.parse(text);
         console.log('Response Type: ' + response.type + ',  Status: ' + response.ok);
         if (!response.ok) {
             console.log("Bad Response");
             if (response.status === 401) {
-                // auto logout if 401 response returned from api
-                clearLocalStorageAuthData();
-                //location.reload(true);
+                logout();
             }
-
             const error = (data && data.message) || response.statusText;
             return Promise.reject(error);
         }
         console.log("Good Response: " + JSON.stringify(data));
-
         return data;
     });
 }
 
-function clearLocalStorageAuthData() {
-    localStorage.removeItem('user');
+function logout() {
+    localStorage.removeItem('loggedInUser');
+    history.push("/AppLogin")
 }
 
-function prepareUserInfo(username, apiRsp) {
+function prepareLoginInfo(username, apiRsp) {
     const apiRspObj = apiRsp;
-    let loggedInTimeInMS = Date.now();
-    const userInfo = JSON.stringify({
-        'userName': username,
-        'loggedInTimeInMS': loggedInTimeInMS,
-        'authToken': apiRspObj['access_token'],
-        'refreshToken': apiRspObj['refresh_token'],
-        'tokenType': apiRspObj['token_type'],
-        'expiresInSecs': apiRspObj['expires_in']
+    JWTToken = apiRspObj['access_token'];
+    const loginInfo = JSON.stringify({
+        'JWTToken': apiRspObj['access_token'],
     });
-    return userInfo;
+    return loginInfo;
 }
+

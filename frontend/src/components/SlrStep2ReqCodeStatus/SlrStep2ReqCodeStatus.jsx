@@ -133,7 +133,7 @@ class SlrStep2ReqCodeStatus extends Component {
   }
 
   fetchRegisterStatus(url) {
-    return fetch(url);
+    return fetch(url, {headers:{}});
   }
 
   showLoadingModal() {
@@ -202,18 +202,6 @@ class SlrStep2ReqCodeStatus extends Component {
 
     return (
       <div>
-        <div>
-          <nav aria-label="breadcrumb">
-            <ol className="breadcrumb">
-              <li className="breadcrumb-item " aria-current="page">Home</li>
-              <li className="breadcrumb-item active" aria-current="page"> SLR Step 2: Request Code
-                Generation Status
-                Devices
-              </li>
-            </ol>
-          </nav>
-        </div>
-
         <div className="container">
           <div className="slrInfo" onClick={this.infodivclickS2S}>
             <a id="slrinfoPopuplink" href="#click">
@@ -326,7 +314,7 @@ class SlrStep2ReqCodeStatus extends Component {
                     </div>
                     <div className="actionButtonGroup4">
                       <button className="btn btn-primary"
-                              onClick={ () => this.props.history.push('/') }
+                              onClick={ () => this.props.history.push('/Home') }
                       >Home
                       </button>
                       <UltimatePaginationBootstrap

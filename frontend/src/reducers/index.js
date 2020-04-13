@@ -22,12 +22,19 @@ import { auth } from './auth-reducer';
 import { upload } from './upload-reducer';
 import { register } from './register-reducer';
 import { common } from './common-reducer';
+import { registration } from './userRegistration-reducer';
+import { appLogin } from './login-reducer';
+import { forgotPassword } from './passwordReset-reducer'
+
 const rootReducer = combineReducers({
     alert,
     auth,
     upload,
     register,
     common,
+    registration,
+    appLogin,
+    forgotPassword
 });
 
 export default rootReducer;
