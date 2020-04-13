@@ -19,8 +19,11 @@ import yaml
 from flask_restful import Resource, reqparse, request
 
 import config
+from models.sl_logger import SlLogger
 
+logger = SlLogger.get_logger(__name__)
 home = str(Path.home())
+oauth_token = ""
 
 
 class UserCco(Resource):
@@ -40,27 +43,28 @@ class UserCco(Resource):
     def post(self):
 
         try:
-            with open(home+"/config.yaml", 'r') as yamlfile:
+            with open(home + "/config.yaml", 'r') as yamlfile:
                 cfg = yaml.load(yamlfile)
             client_id = cfg['api_keys']['client_id']
             client_secret = cfg['api_keys']['client_secret']
 
-        except:
+        except Exception as e:
+            logger.error(e)
+            logger.error("Not able to find config.yaml file!")
             return {'message': 'Not able to find config.yaml file!'}, 401
 
-        print("Printing raw request..")
-        print(request.__dict__)
-
+        logger.info("Printing raw request..")
+        logger.info(request.__dict__)
         data = UserCco.parser.parse_args()
         uri = "https://cloudsso.cisco.com/as/token.oauth2"
         body = {"client_id": client_id, "client_secret": client_secret, "username": data['username'],
                 "password": data['password'], "grant_type": "password"}
         config.USER_ID = data['username']
-        print("User ID:", config.USER_ID)
+        logger.info("User ID: {}".format(config.USER_ID))
         headers = {'Content-Type': "application/x-www-form-urlencoded"}
         response = requests.request("POST", uri, headers=headers, params=body)
-        print("Now printing response....")
-        print(response.text)
+        logger.info("Now printing response....")
+        logger.info(response.text)
         try:
             token_type = response.json()['token_type']
             config.OAUTH_TOKEN = response.json()['access_token']
@@ -68,11 +72,14 @@ class UserCco(Resource):
             # option while registering for grant assuming that CSSM never use refresh_token
             # refresh_token = response.json()['refresh_token']
             expires_in = response.json()['expires_in']
-            print("====>>>>    Success: Got OAuth Token    <<<<====\n\n")
-        except:
+            logger.info("====>>>>    Success: Got OAuth Token    <<<<====\n\n")
+        except Exception as e:
+            logger.error(e)
+            logger.error("Please check your username/password!")
             return {'message': 'Please check your username/password!'}, 401
 
         return {'access_token': config.OAUTH_TOKEN,
                 # 'refresh_token': refresh_token,
                 'token_type': token_type,
                 'expires_in': expires_in}
+

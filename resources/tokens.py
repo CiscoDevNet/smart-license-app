@@ -13,32 +13,33 @@
 # IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-import sqlite3
-import requests
-import threading
-from flask_restful import Resource, reqparse
-from subprocess import Popen, PIPE
-import urllib3
-import config
-from math import ceil
 import os
-from distutils.version import StrictVersion
+import sqlite3
+import threading
 import time
-from netmiko import ConnectHandler
-from platform import system
-from subprocess import call
-from models.tokens import TokensModel
+from distutils.version import StrictVersion
+from math import ceil
 from pathlib import Path
-import yaml
-import json
+from subprocess import Popen, PIPE
+from subprocess import call
+import config
+import requests
+import urllib3
+from flask_jwt import jwt_required
+from flask_restful import Resource, reqparse
+from models.helper import Helper
+from models.tokens import TokensModel
+from netmiko import ConnectHandler
+from models.sl_logger import SlLogger
 
 home = str(Path.home())
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+logger = SlLogger.get_logger(__name__)
+
 
 class Tokens(Resource):
-
     parser = reqparse.RequestParser()
     parser.add_argument('oauth_token',
                         type=str,
@@ -46,52 +47,60 @@ class Tokens(Resource):
                         help="This field cannot be blank."
                         )
 
-    # @jwt_required()
+    @jwt_required()
     def get(self, uuid):
         data = Tokens.parser.parse_args()
-        print("OAuth token is:", data['oauth_token'])
+        logger.info("OAuth token is: {}".format(data['oauth_token']))
         try:
             rows = TokensModel.find_by_uuid(uuid, "device_store")
-        except:
+        except Exception as e:
+            logger.error(e)
+            logger.error("Data search operation failed!", exc_info=True)
             return {"message": "Data search operation failed!"}, 500
 
         devices = []
         for row in rows:
             devices.append({'ipaddr': row[1], 'username': row[2], 'password': row[3], 'sa_name': row[4],
                             'va_name': row[5], 'domain': row[6]})
-        print("==>> Printing devices from within get method for resource: Tokens <<==")
-        print(devices)
+        logger.info("==>> Printing devices from within get method for resource: Tokens <<==")
+        logger.info(devices)
         if rows:
             return {'uuid': uuid,
                     'devices': devices}
+        logger.error("Request with UUID: '{}' not found!".format(uuid))
         return {"message": "Request with UUID: '{}' not found!".format(uuid)}, 404
 
+    @jwt_required()
     def post(self, uuid):
         data = Tokens.parser.parse_args()
         try:
             rows = TokensModel.find_by_uuid_column(uuid, "device_store", "ipaddr")
-            print('** NOW Printing rows for UUID:', rows)
-
-        except:
+            logger.info("** NOW Printing rows for UUID: {}".format(rows))
+        except Exception as e:
+            logger.error(e)
+            logger.error("Data search operation failed!", exc_info=True)
             return {"message": "Data search operation failed!"}, 500
 
         if rows:
             try:
-                print("Starting Token registration threads...")
+                logger.info("Starting Token registration threads...")
                 self.create_threads(rows, "registerToken", uuid, data['oauth_token'])
                 response = {
                     'uuid': uuid,
                     'status': 'Tokens configuration process started!'
                 }
                 # Update SL Registration process as completed
-                sl_status = {}
-                sl_status['status'] = "slc"
-                print("@@@@@@@@@@@ Now updating SL Status as completed @@@@@@@@@@@")
+                sl_status = {'status': "slc"}
+                logger.info("@@@@@@@@@@@ Now updating SL Status as completed @@@@@@@@@@@")
                 TokensModel.update(uuid, sl_status, "upload_info_store")
+                logger.info(response)
                 return response, 201
-            except:
+            except Exception as e:
+                logger.error(e)
+                logger.error("Tokens configuration process failed!", exc_info=True)
                 {"message": "Tokens configuration process failed!"}, 500
         else:
+            logger.error("No devices found from request UUID!", exc_info=True)
             return {"message": "No devices found from request UUID!"}, 400
 
     @classmethod
@@ -116,129 +125,8 @@ class Tokens(Resource):
         param_w = '-w' if config.OS_TYPE.lower() == 'windows' else '-W'
 
         # Build command
-        command = ['ping', param, '1', param_w, '1', ip]
+        command = ['ping', param, '2', param_w, '1', ip]
         return call(command) == 0
-
-
-    @classmethod
-    def check_version(cls, device_ip, username, password):
-        # Check device version & platform type
-        version_dict = {}
-        version_dict['version'] = None
-        version_dict['error'] = ''
-
-        url = "https://"+device_ip+":443/restconf/data/native/version"
-        headers = {
-                    'FOXY-API-VERSION': "1",
-                    'Accept': "application/yang-data+json",
-                    'Content-Type': "application/yang-data+json",
-                    'Cache-Control': "no-cache"
-        }
-
-        try:
-            response = requests.request("GET", url, auth=(username, password), headers=headers, verify=False, timeout=5)
-            print("Printing Device version info from GET call response...")
-            print(response.content.decode())
-
-            try:
-                version = response.json()['Cisco-IOS-XE-native:version']
-                version_dict['version'] = version
-                print("====>>>>    Success: Got SW Version from the device   <<<<====\n\n")
-                print("Version:", version)
-            except:
-                print('====>>>>    Unable to get SW Version from the device. Error:  %s' % response.text)
-                version_dict['error'] = response.text
-        except:
-            print("==>> REST GET Call for check_version timed out!")
-            version_dict['error'] = 'REST GET Call timed out'
-
-        return version_dict
-
-    @classmethod
-    def check_pid(cls, device_ip, username, password):
-        # Check device PID
-        pid_dict = {}
-        pid_dict['pid'] = None
-        pid_dict['error'] = ''
-
-        url = "https://"+device_ip+":443/restconf/data/cisco-smart-license:licensing/state/state-info/udi/pid"
-
-        headers = {
-                    'FOXY-API-VERSION': "1",
-                    'Accept': "application/yang-data+json",
-                    'Content-Type': "application/yang-data+json",
-                    'Cache-Control': "no-cache"
-        }
-
-        try:
-            response = requests.request("GET", url, auth=(username, password), headers=headers, verify=False, timeout=5)
-            print("Printing device PID info from GET call response...")
-            print(response.content.decode())
-
-            try:
-                pid = response.json()['cisco-smart-license:pid']
-                pid_dict['pid'] = pid
-                print("====>>>>    Success: Got PID from the device   <<<<====\n\n")
-                print("PID:", pid)
-            except:
-                print('====>>>>    Unable to get PID from the device. Error:  %s' % response.text)
-                pid_dict['error'] = response.text
-        except:
-            print("==>> REST GET Call for check_pid timed out!")
-            pid_dict['error'] = 'REST GET Call timed out'
-
-        return pid_dict
-
-    @classmethod
-    def check_device_type(cls, pid):
-        # Initialize dict
-        device_type_dict = {}
-        device_type_dict['device_type'] = None
-        device_type_dict['exec_dlc'] = False
-        device_type_dict['error'] = None
-        print("In method check_device_type....")
-        print(" ++++++++ device_type_dict DICT: ",json.dumps(device_type_dict, indent = 4))
-        print(" ++++++++ DEVICE STRING: ",device_type_dict['device_type'])
-        try:
-            with open(home+"/config.yaml", 'r') as yamlfile:
-                cfg = yaml.load(yamlfile)
-            routers = cfg['pids']['router_pids']
-            switches = cfg['pids']['switch_pids']
-            print(" ++++++++ routers string: ",routers)
-            print(" ++++++++ switches string: ",switches)
-
-            # Check device type
-            if pid in switches:
-                device_type_dict['device_type'] = "switch"
-            elif pid in routers:
-                device_type_dict['device_type'] = "router"
-
-            if device_type_dict['device_type']:
-                print("====>>>>    Success: Got PID matched from config.yaml!   <<<<====\n\n")
-                if ("3850-24P" or "3650" or "ISR" or "ASR" or "CSR") in pid:
-                    device_type_dict['exec_dlc'] = True
-            print(" ++++++++ device_type_dict DICT: ",json.dumps(device_type_dict, indent = 4))
-            print(" ++++++++ DEVICE STRING: ",device_type_dict['device_type'])
-            print("Leaving method check_device_type...")
-            return device_type_dict
-        except Exception:
-            device_type_dict['error'] = 'PID not found! Check config.yaml file!'
-            raise
-
-        # switches = ["C9300-24U", "WS-C3850X-24U", "C3850-24P", "WS-C3850-24P"]
-        # routers = ["ISR4451-X/K9", "ISR4221/K9", "ISR4331/K9", "ISR4351/K9", "ISR4431/K9", "ISR4321/K9",
-        #            "ISR4461/K9", "ISRV", "CSR1000V"]
-        #
-        # # Check device type
-        # if pid in switches:
-        #     device_type_dict['device_type'] = "switch"
-        # elif pid in routers:
-        #     device_type_dict['device_type'] = "router"
-        #
-        # if device_type_dict['device_type']:
-        #     if ("3850-24P" or "3650" or "ISR" or "ASR" or "CSR") in pid:
-        #         device_type_dict['exec_dlc'] = True
-        # return device_type_dict
 
     @classmethod
     def execute_cli(cls, device_ip, username, password, cli):
@@ -255,19 +143,21 @@ class Tokens(Resource):
 
         net_connect = ConnectHandler(**device)
         try:
-            print("+++++++ DLC: Finding device prompt for: ", device_ip, " +++++++")
+            logger.info("+++++++ DLC: Finding device prompt for: {} +++++++".format(device_ip))
             device_prompt = net_connect.find_prompt()
 
-            print("++>> Starting CLI execution process on device: ", device_prompt)
+            logger.info("++>> Starting CLI execution process on device: {}".format(device_prompt))
             if device_prompt:
                 output = net_connect.send_command(cli)
             else:
-                print("====>>>>    ERROR: Not able to get device prompt for ip address: ", device_ip, "    <<<<====")
-        except:
-            print("====>>>>    ERROR: NOT able to connect to the device: ", device_ip, "    <<<<====")
+                logger.error(
+                    "====>>>>    ERROR: Not able to get device prompt for ip address: {} <<<<====".format(device_ip))
+        except Exception as e:
+            logger.error(e)
+            logger.error("====>>>>    ERROR: NOT able to connect to the device: {} <<<<====".format(device_ip))
         # Close connection
         net_connect.disconnect()
-        print("+++++++++ From method execute_cli returning output: ", output)
+        logger.info("+++++++++ From method execute_cli returning output: {}".format(output))
         return output
 
     @classmethod
@@ -287,70 +177,69 @@ class Tokens(Resource):
         try:
             device_prompt = net_connect.find_prompt()
 
-            print("++>> Starting CLI configuration process on device: ", device_prompt)
+            logger.info("++>> Starting CLI configuration process on device: {}".format(device_prompt))
             if device_prompt:
                 # output = net_connect.send_command("license smart conversion start")
                 output = net_connect.send_config_set(command_list)
             else:
-                print("Not able to get device prompt for ip address: ", device_ip)
-        except:
-            print("====>>>>    ERROR: NOT able to connect to the device: ", device_ip, "    <<<<====")
+                logger.error("Not able to get device prompt for ip address: {}".format(device_ip))
+        except Exception as e:
+            logger.error(e)
+            logger.error("====>>>>    ERROR: NOT able to connect to the device: {}  <<<<====".format(device_ip))
         # Close connection
         net_connect.disconnect()
-        print("+++++++++ From method config_commands returning output: ", output)
+        logger.info("+++++++++ From method config_commands returning output: {}".format(output))
         return output
 
     @classmethod
     def check_dlc(cls, device_output):
-        print(" +++++++++ In method check_dlc ++++++++++")
-        print(" +++++++++ Device output passed in: ", device_output)
+        logger.info(" +++++++++ In method check_dlc ++++++++++")
+        logger.info(" +++++++++ Device output passed in: {}".format(device_output))
         if device_output == "Smart Agent not registered":
             dlc_completed = False
         elif device_output == "":
             dlc_completed = True
         else:
             dlc_completed = True
-        print(" +++++++++ From method check_dlc returning dlc_completed as: ", dlc_completed)
+        logger.info(" +++++++++ From method check_dlc returning dlc_completed as: {}".format(dlc_completed))
         return dlc_completed
 
     @classmethod
     def check_dlc_show(cls, show_output):
-        print(" +++++++++ In method check_dlc_show ++++++++++")
-        print(" +++++++++ Device show output passed in: ", show_output)
+        logger.info(" +++++++++ In method check_dlc_show ++++++++++")
+        logger.info(" +++++++++ Device show output passed in: {}".format(show_output))
         if "Status: Already converted" in show_output:
             dlc_confirmed = True
         else:
             dlc_confirmed = False
-        print(" +++++++++ From method check_dlc_show returning dlc_confirmed as: ", dlc_confirmed)
+        logger.info(" +++++++++ From method check_dlc_show returning dlc_confirmed as: {}".format(dlc_confirmed))
         return dlc_confirmed
 
     @classmethod
     def update_status(cls, uuid, device_ip):
         update = True
-        status_row = TokensModel.find_by_uuid_and_column(uuid, "device_status_store", "ipaddr", device_ip)
-        status = status_row[0][7]
+        # status_row = TokensModel.find_by_uuid_and_column(uuid, "device_status_store", "ipaddr", device_ip)
+        # status = status_row[0][7]
 
         # Don't update status if DLC is executed as a last step else update status
         # if (status == "Registered / DLC Executed") or (status == "Registered / DLC Execution Failed!") \
         #         or (status == "DLC Confirmation Failed!") or (status == "DLC Execution Failed!")\
         #         or (status == "CLI Execution Failed!"):
         if config.ERROR:
-            print("+++++ Changing Value of update variable to: False")
+            logger.info("+++++ Changing Value of update variable to: False")
             update = False
         else:
-            print("+++++ Changing Value of update variable to: True")
+            logger.info("+++++ Changing Value of update variable to: True")
             update = True
         return update
 
     @classmethod
     def getSLToken(cls, domain_name, va_name, oauthToken):
-        sl_token_dict = {}
-        sl_token_dict['sl_token'] = ''
-        sl_token_dict['error'] = ''
+        sl_token_dict = {'sl_token': '', 'error': ''}
 
-        print("====>>>>    Acquire SL Token from CSSM    <<<<====\n\n")
-        url = "https://apmx.cisco.com/services/api/smart-accounts-and-licensing/v1/accounts/"\
-            + domain_name + "/virtual-accounts/" + va_name + "/tokens"
+        logger.info("====>>>>    Acquire SL Token from CSSM    <<<<====\n\n")
+        url = "https://apmx.cisco.com/services/api/smart-accounts-and-licensing/v1/accounts/" \
+              + domain_name + "/virtual-accounts/" + va_name + "/tokens"
 
         headers = {
             "Authorization": oauthToken,
@@ -364,29 +253,29 @@ class Tokens(Resource):
 
             try:
                 sl_token = response.json()['tokens'][0]['token']
-                print("====>>>>    Success: Got SL Token from CSSM    <<<<====\n\n")
-                print("SL Token:", sl_token+"\n\n")
+                logger.info("====>>>>    Success: Got SL Token from CSSM    <<<<====\n\n")
+                logger.info("SL Token: {}\n\n".format(sl_token))
                 sl_token_dict['sl_token'] = sl_token
                 sl_token_dict['error'] = "n/a"
-            except:
-                print('====>>>>    Unable to get SL Token from CSSM. Error:  %s' % response.text)
+            except Exception as e:
+                logger.error(e)
+                logger.error('====>>>>    Unable to get SL Token from CSSM. Error:  %s' % response.text)
                 sl_token_dict['error'] = response.text
-                print('====>>>>    Creating SL Token from CSSM')
+                logger.info('====>>>>    Creating SL Token from CSSM')
                 sl_token_dict = Tokens.createSLToken(domain_name, va_name, oauthToken)
-        except:
-            print('====>>>>    Fetch SL Token from CSSM GET Request timed out!    <<<<====')
+        except Exception as e:
+            logger.error(e)
+            logger.error('====>>>>    Fetch SL Token from CSSM GET Request timed out!    <<<<====')
             sl_token_dict['error'] = "Fetch SL Token from CSSM GET Request timed out"
         return sl_token_dict
 
     @classmethod
     def createSLToken(cls, domain_name, va_name, oauthToken):
-        sl_token_dict = {}
-        sl_token_dict['sl_token'] = ''
-        sl_token_dict['error'] = ''
+        sl_token_dict = {'sl_token': '', 'error': ''}
 
-        print("====>>>>    Create SL Token from CSSM    <<<<====\n\n")
-        url = "https://apmx.cisco.com/services/api/smart-accounts-and-licensing/v1/accounts/"\
-            + domain_name + "/virtual-accounts/" + va_name + "/tokens"
+        logger.info("====>>>>    Create SL Token from CSSM    <<<<====\n\n")
+        url = "https://apmx.cisco.com/services/api/smart-accounts-and-licensing/v1/accounts/" \
+              + domain_name + "/virtual-accounts/" + va_name + "/tokens"
         payload = "{\"description\": \"SL Token Automation\",\"expiresAfterDays\": 30,\"exportControlled\":" \
                   " \"Not Allowed\"}"
         headers = {
@@ -400,38 +289,39 @@ class Tokens(Resource):
 
             try:
                 sl_token = response.json()['tokenInfo']['token']
-                print("====>>>>    Success: Created SL Token from CSSM    <<<<====\n\n")
-                print("Newly created SL Token:", sl_token+"\n\n")
+                logger.info("====>>>>    Success: Created SL Token from CSSM    <<<<====\n\n")
+                logger.info("Newly created SL Token: {} \n\n".format(sl_token))
                 sl_token_dict['sl_token'] = sl_token
                 sl_token_dict['error'] = "n/a"
-            except:
-                print('====>>>>    Unable to get SL Token from CSSM. Error:  %s' % response.text)
+            except Exception as e:
+                logger.error(e)
+                logger.error('====>>>>    Unable to get SL Token from CSSM. Error:  %s' % response.text)
                 sl_token_dict['error'] = response.text
-        except:
-            print('====>>>>    Get SL Token from CSSM POST Request timed out!     <<<<====\n\n')
+        except Exception as e:
+            logger.error(e)
+            logger.error('====>>>>    Get SL Token from CSSM POST Request timed out!     <<<<====\n\n')
             sl_token_dict['error'] = 'Get SL Token from CSSM POST Request timed out'
         return sl_token_dict
 
     @classmethod
     def deregisterToken(cls, device_ip, uuid, sa, va, domain, oauth_token, username, password):
-        return_code = None
 
         if Tokens.universal_ping(device_ip):
-            print("====>>>>    De-registering Token from the Device: ", device_ip, "    <<<<====\n\n")
-            url = "https://"+device_ip+":443/restconf/data/cisco-smart-license:de-register"
+            logger.info("====>>>>    De-registering Token from the Device: {}  <<<<====\n\n".format(device_ip))
+            url = "https://" + device_ip + ":443/restconf/data/cisco-smart-license:de-register"
             payload = ""
             headers = {
-                    'FOXY-API-VERSION': "1",
-                    'Accept': "application/yang-data+json",
-                    'Content-Type': "application/yang-data+json",
-                    'Cache-Control': "no-cache"
+                'FOXY-API-VERSION': "1",
+                'Accept': "application/yang-data+json",
+                'Content-Type': "application/yang-data+json",
+                'Cache-Control': "no-cache"
             }
 
             try:
                 response = requests.request("POST", url, auth=(username, password), data=payload, headers=headers,
                                             verify=False, timeout=10)
-                print("Printing SL token de-register from the device POST call response...")
-                print(response.content.decode())
+                logger.info("Printing SL token de-register from the device POST call response...")
+                logger.info(response.content.decode())
 
                 try:
                     return_code = response.json()["cisco-smart-license:output"]["return-code"]
@@ -450,10 +340,13 @@ class Tokens(Resource):
                         'status': mapped_return_code
                     }
                     TokensModel.update(uuid, response_update, "device_status_store")
-                    print("====>>>>    Success: SL Token de-registered from the device: ", device_ip, "    <<<<====\n\n")
-                except:
-                    print("====>>>>    ERROR: Unable to De-register Token from the device: ",
-                          device_ip, " Error:  %s" % response.text)
+                    logger.info("====>>>>    Success: SL Token de-registered from the device: {} <<<<====\n\n".format(
+                        device_ip))
+                except Exception as e:
+                    logger.error(e)
+                    logger.error(
+                        "====>>>>    ERROR: Unable to De-register Token from the device: {}<<<<====\n\n".format(
+                            device_ip))
                 response_update = {
                     'ipaddr': device_ip,
                     'username': username,
@@ -464,8 +357,9 @@ class Tokens(Resource):
                     'status': 'Request Failed'
                 }
                 TokensModel.update(uuid, response_update, "device_status_store")
-            except:
-                print("SL token de-register from the device POST call timed out...")
+            except Exception as e:
+                logger.error(e)
+                logger.error("SL token de-register from the device POST call timed out...")
                 response_update = {
                     'ipaddr': device_ip,
                     'username': username,
@@ -477,7 +371,7 @@ class Tokens(Resource):
                 }
                 TokensModel.update(uuid, response_update, "device_status_store")
         else:
-            print("No connectivity to the device...")
+            logger.error("No connectivity to the device...")
             response_update = {
                 'ipaddr': device_ip,
                 'username': username,
@@ -493,7 +387,6 @@ class Tokens(Resource):
     def registerToken(cls, device_ip, uuid, sa, va, domain, oauth_token, username, password):
         sl_token_value = None
         sw_ver_str = None
-        pid_str = None
         supported_device = False
         # device_type_dict = {}
         # device_type_dict['device_type'] = None
@@ -501,75 +394,18 @@ class Tokens(Resource):
         # device_type_dict['error'] = None
 
         if Tokens.universal_ping(device_ip):
-            try:
-                # get device verison
-                sw_version = Tokens.check_version(device_ip, username, password)
-                sw_ver_str = sw_version['version']
-                print(" ++++++++ SW VERSION STRING: ",sw_ver_str)
-            except:
-                print("====>>>>    ERROR: Unable to fetch device SW Version!", device_ip)
-                response = {
-                    'ipaddr': device_ip,
-                    'username': username,
-                    'password': password,
-                    'sa_name': sa,
-                    'va_name': va,
-                    'domain': domain,
-                    'status': sw_version['error']
-                }
-                config.ERROR = True
-                TokensModel.update(uuid, response, "device_status_store")
 
-            try:
-                # get device PID
-                # Start here define empty PID dctionary in case we are not able to get thru check_pid method
-                pid = Tokens.check_pid(device_ip, username, password)
-                pid_str = pid['pid']
-                print(" ++++++++ PID DICT: ",json.dumps(pid, indent = 4))
-                print(" ++++++++ PID STRING: ",pid_str)
-                # device_type_dict = Tokens.check_device_type(pid_str)
-            except:
-                print("====>>>>    ERROR: Unable to fetch device PID!", device_ip)
-                response = {
-                    'ipaddr': device_ip,
-                    'username': username,
-                    'password': password,
-                    'sa_name': sa,
-                    'va_name': va,
-                    'domain': domain,
-                    'status': pid['error']
-                }
-                config.ERROR = True
-                TokensModel.update(uuid, response, "device_status_store")
-
-            try:
-                # check if PID is found and if it is belongs to a router or a switch
-                device_type_dict = Tokens.check_device_type(pid_str)
-                print(" ++++++++ device_type_dict DICT: ",json.dumps(device_type_dict, indent = 4))
-                print(" ++++++++ DEVICE STRING: ",device_type_dict['device_type'])
-            except Exception as e:
-                print("====>>>>    ERROR: Unable to find PID! Check config.yaml file!", device_ip)
-                print('Error! Code: {c}, Message, {m}'.format(c = type(e).__name__, m = str(e)))
-                status_str = "Unable to parse config.yaml file! Check file contents! ERROR: " + type(e).__name__\
-                             + " - " + str(e)
-                response = {
-                    'ipaddr': device_ip,
-                    'username': username,
-                    'password': password,
-                    'sa_name': sa,
-                    'va_name': va,
-                    'domain': domain,
-                    'status': status_str
-                }
-                config.ERROR = True
-                TokensModel.update(uuid, response, "device_status_store")
-
+            config.ERROR, sw_ver_str, device_type_dict = Helper.check_dlc_required(device_ip, uuid, sa, va, domain,
+                                                                                   oauth_token, username, password)
             # PID check for SL Connected part
             if not config.ERROR:
                 if sw_ver_str and device_type_dict['device_type'] is not None:
-                    print("==>> sw_ver_str & device_type_dict['device_type']", sw_ver_str, device_type_dict['device_type'])
-                    if (StrictVersion(sw_ver_str) < StrictVersion("16.9")) and (device_type_dict['device_type'] == "switch"):
-                        print("====>>>>    Unsupported switch type!", device_ip)
+                    logger.info("==>> sw_ver_str & device_type_dict['device_type']: {} & {}".format(sw_ver_str,
+                                                                                                    device_type_dict[
+                                                                                                        'device_type']))
+                    if (StrictVersion(sw_ver_str) < StrictVersion("16.9")) and (
+                            device_type_dict['device_type'] == "switch"):
+                        logger.info("====>>>>    Unsupported switch type! {}".format(device_ip))
                         response = {
                             'ipaddr': device_ip,
                             'username': username,
@@ -581,8 +417,9 @@ class Tokens(Resource):
                         }
                         config.ERROR = True
                         TokensModel.update(uuid, response, "device_status_store")
-                    elif (StrictVersion(sw_ver_str) < StrictVersion("16.10")) and (device_type_dict['device_type'] == "router"):
-                        print("====>>>>    Unsupported router type!", device_ip)
+                    elif (StrictVersion(sw_ver_str) < StrictVersion("16.10")) and (
+                            device_type_dict['device_type'] == "router"):
+                        logger.info("====>>>>    Unsupported router type! {}".format(device_ip))
                         response = {
                             'ipaddr': device_ip,
                             'username': username,
@@ -602,8 +439,9 @@ class Tokens(Resource):
                             # get SL token first
                             sl_token = Tokens.getSLToken(domain, va, oauth_token)
                             sl_token_value = sl_token['sl_token']
-                        except:
-                            print("====>>>>    ERROR: Unable to get SL Token!", device_ip)
+                        except Exception as e:
+                            logger.error(e)
+                            logger.error("====>>>>    ERROR: Unable to get SL Token! {}".format(device_ip))
                             response = {
                                 'ipaddr': device_ip,
                                 'username': username,
@@ -616,11 +454,13 @@ class Tokens(Resource):
                             config.ERROR = True
                             TokensModel.update(uuid, response, "device_status_store")
                         if sl_token_value:
-                            print("====>>>>    Configuring SL Token on the Device: ", device_ip, "    <<<<====\n\n")
-                            url = "https://"+device_ip+":443/restconf/data/cisco-smart-license:register-id-token"
-                            payload = "{\"cisco-smart-license:register-id-token\": {\"id-token\" :\"" + sl_token_value + "\""" }}"
-                            print("Printing Payload within registerToken...")
-                            print(payload)
+                            logger.info(
+                                "====>>>>    Configuring SL Token on the Device: {} <<<<====\n\n".format(device_ip))
+                            url = "https://" + device_ip + ":443/restconf/data/cisco-smart-license:register-id-token"
+                            payload = "{\"cisco-smart-license:register-id-token\": {\"id-token\" :\"" + \
+                                      sl_token_value + "\""" }}"
+                            logger.info("Printing Payload within registerToken...")
+                            logger.info(payload)
                             headers = {
                                 'FOXY-API-VERSION': "1",
                                 'Accept': "application/yang-data+json",
@@ -631,9 +471,9 @@ class Tokens(Resource):
                             try:
                                 response = requests.request("POST", url, auth=(username, password), data=payload,
                                                             headers=headers, verify=False, timeout=5)
-                                print("Printing SL token config on device POST call response...")
-                                print(response.content.decode())
-                                print("Printing SL token config on device POST call response...")
+                                logger.info("Printing SL token config on device POST call response...")
+                                logger.info(response.content.decode())
+                                logger.info("Printing SL token config on device POST call response...")
 
                                 try:
                                     return_code = response.json()["cisco-smart-license:output"]["return-code"]
@@ -652,11 +492,12 @@ class Tokens(Resource):
                                         'status': mapped_return_code
                                     }
                                     TokensModel.update(uuid, response_update, "device_status_store")
-                                    print("====>>>>    Success: SL Token configured on the device: ",
-                                          device_ip, "    <<<<====\n\n")
-                                except:
-                                    print("====>>>>    ERROR: Unable to configure SL Token on the device: ",
-                                          device_ip, " Error:  %s" % response.text)
+                                    logger.info("====>>>>    Success: SL Token configured on the device: {} \
+                                                <<<<====\n\n".format(device_ip))
+                                except Exception as e:
+                                    logger.error(e)
+                                    logger.error("====>>>>    ERROR: Unable to configure SL Token on the device: {} \
+                                                 Error: {}".format(device_ip, response.text))
                                     response_update = {
                                         'ipaddr': device_ip,
                                         'username': username,
@@ -668,8 +509,9 @@ class Tokens(Resource):
                                     }
                                     config.ERROR = True
                                     TokensModel.update(uuid, response_update, "device_status_store")
-                            except:
-                                print("==>> ERROR: SL token config on device POST call timed out...")
+                            except Exception as e:
+                                logger.error(e)
+                                logger.error("==>> ERROR: SL token config on device POST call timed out...")
                                 response_update = {
                                     'ipaddr': device_ip,
                                     'username': username,
@@ -682,7 +524,7 @@ class Tokens(Resource):
                                 config.ERROR = True
                                 TokensModel.update(uuid, response_update, "device_status_store")
                         # After token registration execute DLC
-                        if device_type_dict['exec_dlc']:
+                        if TokensModel.select_dlc(uuid) == "True":
                             dlc_completed = False
                             dlc_confirmed = False
                             dlc_successful = False
@@ -691,12 +533,13 @@ class Tokens(Resource):
                             while (not dlc_completed) and (dlc_ctr < 3):
                                 time.sleep(2)
                                 dlc_ctr += 1
-                                print("++>> Executing DLC on Device: ", device_ip)
+                                logger.info("++>> Executing DLC on Device: {}".format(device_ip))
                                 try:
                                     device_output = Tokens.execute_cli(device_ip, username,
                                                                        password, "license smart conversion start")
                                     show_output = Tokens.execute_cli(device_ip, username,
-                                                                     password, "sh license status | sec License Conversion")
+                                                                     password,
+                                                                     "sh license status | sec License Conversion")
                                     # Check DLC is successful or not
                                     dlc_completed = Tokens.check_dlc(device_output)
                                     if dlc_completed:
@@ -705,8 +548,8 @@ class Tokens(Resource):
                                         if dlc_confirmed:
                                             dlc_successful = True
                                         else:
-                                            print("TRY: ", dlc_ctr, "====>>>>    ERROR: Not able to confirm DLC on device: "
-                                                  , device_ip, "    <<<<====\n\n")
+                                            logger.error("TRY: {} ====>>>> ERROR: Not able to confirm DLC on device: {} \
+                                            <<<<====\n\n".format(dlc_ctr, device_ip))
                                             response_update = {
                                                 'ipaddr': device_ip,
                                                 'username': username,
@@ -720,8 +563,8 @@ class Tokens(Resource):
                                             TokensModel.update(uuid, response_update, "device_status_store")
                                             dlc_successful = False
                                     else:
-                                        print("TRY: ", dlc_ctr, "====>>>>    ERROR: Not able to execute DLC: ",
-                                              device_ip, "    <<<<====\n\n")
+                                        logger.error("TRY: {} ====>>>>    ERROR: Not able to execute DLC: {} \
+                                        <<<<====\n\n".format(dlc_ctr, device_ip))
                                         response_update = {
                                             'ipaddr': device_ip,
                                             'username': username,
@@ -734,9 +577,10 @@ class Tokens(Resource):
                                         config.ERROR = True
                                         TokensModel.update(uuid, response_update, "device_status_store")
                                         dlc_successful = False
-                                except:
-                                    print("TRY: ", dlc_ctr, "====>>>>    ERROR: Not able to execute CLI on: ", device_ip,
-                                          "    <<<<====\n\n")
+                                except Exception as e:
+                                    logger.error(e)
+                                    logger.error("TRY: {} ====>>>>    ERROR: Not able to execute CLI on: {} \
+                                    <<<<====\n\n".format(dlc_ctr, device_ip))
                                     response_update = {
                                         'ipaddr': device_ip,
                                         'username': username,
@@ -752,31 +596,31 @@ class Tokens(Resource):
                             if dlc_successful:
                                 # DLC is executed successfully. Update status
                                 response_update = {
-                                            'ipaddr': device_ip,
-                                            'username': username,
-                                            'password': password,
-                                            'sa_name': sa,
-                                            'va_name': va,
-                                            'domain': domain,
-                                            'status': 'Registered / DLC Executed'
+                                    'ipaddr': device_ip,
+                                    'username': username,
+                                    'password': password,
+                                    'sa_name': sa,
+                                    'va_name': va,
+                                    'domain': domain,
+                                    'status': 'Registered / DLC Executed'
                                 }
                                 TokensModel.update(uuid, response_update, "device_status_store")
-                                print("++>> Done with DLC on Device: ", device_ip)
+                                logger.info("++>> Done with DLC on Device: {} ".format(device_ip))
                 else:
-                    print("==>> Unsupported Network Device type...")
+                    logger.info("==>> Unsupported Network Device type...")
                     response = {
-                            'ipaddr': device_ip,
-                            'username': username,
-                            'password': password,
-                            'sa_name': sa,
-                            'va_name': va,
-                            'domain': domain,
-                            'status': 'Unsupported Device PID!'
+                        'ipaddr': device_ip,
+                        'username': username,
+                        'password': password,
+                        'sa_name': sa,
+                        'va_name': va,
+                        'domain': domain,
+                        'status': 'Unsupported Device PID!'
                     }
                     config.ERROR = True
                     TokensModel.update(uuid, response, "device_status_store")
         else:
-            print("No connectivity to the device...")
+            logger.error("No connectivity to the device...")
             response_update = {
                 'ipaddr': device_ip,
                 'username': username,
@@ -791,12 +635,11 @@ class Tokens(Resource):
 
     @classmethod
     def checkStatus(cls, device_ip, uuid, sa, va, domain, oauth_token, username, password):
-        sl_token_value = ""
 
         if Tokens.universal_ping(device_ip):
 
-            print("====>>>>    Checking registration status on the Device: ", device_ip, "    <<<<====\n\n")
-            url = "https://"+device_ip+\
+            logger.info("====>>>>    Checking registration status on the Device: {}<<<<====\n\n".format(device_ip))
+            url = "https://" + device_ip + \
                   ":443/restconf/data/cisco-smart-license:licensing/state/state-info/registration/registration-state"
             headers = {
                 'FOXY-API-VERSION': "1",
@@ -806,9 +649,10 @@ class Tokens(Resource):
             }
 
             try:
-                response = requests.request("GET", url, auth=(username, password), headers=headers, verify=False, timeout=5)
-                print("Printing registration status check from device GET call response...")
-                print(response.content.decode())
+                response = requests.request("GET", url, auth=(username, password), headers=headers, verify=False,
+                                            timeout=5)
+                logger.info("Printing registration status check from device GET call response...")
+                logger.info(response.content.decode())
 
                 try:
                     return_code = response.json()["cisco-smart-license:registration-state"]
@@ -832,13 +676,14 @@ class Tokens(Resource):
                         'domain': domain,
                         'status': mapped_return_code
                     }
-                    print("+++++ UPDATE STATUS IS: ", Tokens.update_status(uuid, device_ip))
+                    logger.info("+++++ UPDATE STATUS IS: {}".format(Tokens.update_status(uuid, device_ip)))
                     if Tokens.update_status(uuid, device_ip):
                         TokensModel.update(uuid, response_update, "device_status_store")
-                    print("====>>>>    Success: Checked registration status on the device: ", device_ip,
-                          "    <<<<====\n\n")
-                except:
-                    print("====>>>>    ERROR: Unable to check registration status!", device_ip)
+                    logger.info("====>>>>    Success: Checked registration status on the device: {} \
+                                <<<<====\n\n".format(device_ip))
+                except Exception as e:
+                    logger.error(e)
+                    logger.error("====>>>>    ERROR: Unable to check registration status! {}".format(device_ip))
                     error_code = response.json()["errors"]["error"][0]["error-tag"]
                     response = {
                         'ipaddr': device_ip,
@@ -852,17 +697,17 @@ class Tokens(Resource):
                     TokensModel.update(uuid, response, "device_status_store")
             except requests.exceptions.ConnectionError:
                 response_update = {
-                        'ipaddr': device_ip,
-                        'username': username,
-                        'password': password,
-                        'sa_name': sa,
-                        'va_name': va,
-                        'domain': domain,
-                        'status': 'Connection Refused!'
+                    'ipaddr': device_ip,
+                    'username': username,
+                    'password': password,
+                    'sa_name': sa,
+                    'va_name': va,
+                    'domain': domain,
+                    'status': 'Connection Refused!'
                 }
                 TokensModel.update(uuid, response_update, "device_status_store")
         else:
-            print("No connectivity to the device...")
+            logger.error("No connectivity to the device...")
             response_update = {
                 'ipaddr': device_ip,
                 'username': username,
@@ -877,12 +722,11 @@ class Tokens(Resource):
     # implement URI to check reg status from DB instead of the device
     @classmethod
     def checkStatusDB(cls, device_ip, uuid, sa, va, domain, oauth_token, username, password):
-        sl_token_value = ""
 
         if Tokens.universal_ping(device_ip):
 
-            print("====>>>>    Checking registration status on the Device: ", device_ip, "    <<<<====\n\n")
-            url = "https://"+device_ip+\
+            logger.info("====>>>>    Checking registration status on the Device: {} <<<<====\n\n".format(device_ip))
+            url = "https://" + device_ip + \
                   ":443/restconf/data/cisco-smart-license:licensing/state/state-info/registration/registration-state"
             headers = {
                 'FOXY-API-VERSION': "1",
@@ -892,9 +736,10 @@ class Tokens(Resource):
             }
 
             try:
-                response = requests.request("GET", url, auth=(username, password), headers=headers, verify=False, timeout=5)
-                print("Printing registration status check from device GET call response...")
-                print(response.content.decode())
+                response = requests.request("GET", url, auth=(username, password), headers=headers, verify=False,
+                                            timeout=5)
+                logger.info("Printing registration status check from device GET call response...")
+                logger.info(response.content.decode())
 
                 try:
                     return_code = response.json()["cisco-smart-license:registration-state"]
@@ -918,13 +763,14 @@ class Tokens(Resource):
                         'domain': domain,
                         'status': mapped_return_code
                     }
-                    print("+++++ UPDATE STATUS IS: ", Tokens.update_status(uuid, device_ip))
+                    logger.info("+++++ UPDATE STATUS IS: {}".format(Tokens.update_status(uuid, device_ip)))
                     if Tokens.update_status(uuid, device_ip):
                         TokensModel.update(uuid, response_update, "device_status_store")
-                    print("====>>>>    Success: Checked registration status on the device: ", device_ip,
-                          "    <<<<====\n\n")
-                except:
-                    print("====>>>>    ERROR: Unable to check registration status!", device_ip)
+                    logger.info("====>>>>    Success: Checked registration status on the device: {} \
+                                <<<<====\n\n".format(device_ip))
+                except Exception as e:
+                    logger.error(e)
+                    logger.error("====>>>>    ERROR: Unable to check registration status! {}".format(device_ip))
                     error_code = response.json()["errors"]["error"][0]["error-tag"]
                     response = {
                         'ipaddr': device_ip,
@@ -938,17 +784,17 @@ class Tokens(Resource):
                     TokensModel.update(uuid, response, "device_status_store")
             except requests.exceptions.ConnectionError:
                 response_update = {
-                        'ipaddr': device_ip,
-                        'username': username,
-                        'password': password,
-                        'sa_name': sa,
-                        'va_name': va,
-                        'domain': domain,
-                        'status': 'Connection Refused!'
+                    'ipaddr': device_ip,
+                    'username': username,
+                    'password': password,
+                    'sa_name': sa,
+                    'va_name': va,
+                    'domain': domain,
+                    'status': 'Connection Refused!'
                 }
                 TokensModel.update(uuid, response_update, "device_status_store")
         else:
-            print("No connectivity to the device...")
+            logger.error("No connectivity to the device...")
             response_update = {
                 'ipaddr': device_ip,
                 'username': username,
@@ -962,38 +808,37 @@ class Tokens(Resource):
 
     @classmethod
     def create_threads(cls, ip_addr_rows, task, uuid, oauth_token):
-        print("Entered create_threads method....")
+        logger.info("Entered create_threads method....")
         threads = []
         # Update SL Registration process as started
-        sl_status = {}
-        sl_status['status'] = "slc"
-        print("@@@@@@@@@@@ Now updating SL Status as started/completed @@@@@@@@@@@")
+        sl_status = {'status': "slc"}
+        logger.info("@@@@@@@@@@@ Now updating SL Status as started/completed @@@@@@@@@@@")
         TokensModel.update(uuid, sl_status, "upload_info_store")
 
         try:
             for ip_addr_row in ip_addr_rows:
-                print("Working on first IP addr: ", ip_addr_row[0])
-                print("Calling proc TokensModel.find_by_uuid_and_columns....")
+                logger.info("Working on first IP addr: {}".format(ip_addr_row[0]))
+                logger.info("Calling proc TokensModel.find_by_uuid_and_columns....")
                 va_domain_row = TokensModel.find_by_uuid_and_column(uuid, "device_store", "ipaddr", ip_addr_row[0])
                 username = va_domain_row[0][2]
                 password = va_domain_row[0][3]
                 sa = va_domain_row[0][4]
                 va = va_domain_row[0][5]
                 domain = va_domain_row[0][6]
-                print("Printing va & domain...")
-                print(va)
-                print(domain)
+                logger.info("Printing va & domain...")
+                logger.info(va)
+                logger.info(domain)
 
                 if task == "registerToken":
-                    print("Launching token registration threads!")
+                    logger.info("Launching token registration threads!")
                     th = threading.Thread(target=Tokens.registerToken, args=(ip_addr_row[0], uuid, sa, va, domain,
                                                                              oauth_token, username, password))
                 elif task == "checkStatus":
-                    print("Launching registration status check threads!")
+                    logger.info("Launching registration status check threads!")
                     th = threading.Thread(target=Tokens.checkStatus, args=(ip_addr_row[0], uuid, sa, va, domain,
                                                                            oauth_token, username, password))
                 elif task == "deregisterToken":
-                    print("Launching token de-registration threads!")
+                    logger.info("Launching token de-registration threads!")
                     th = threading.Thread(target=Tokens.deregisterToken, args=(ip_addr_row[0], uuid, sa, va, domain,
                                                                                oauth_token, username, password))
                 th.start()
@@ -1001,13 +846,15 @@ class Tokens(Resource):
             if task == "checkStatus":
                 for thr in threads:
                     thr.join()
-        except:
-            print("Error in the threads!")
+        except Exception as e:
+            logger.error(e)
+            logger.error("Error in the threads!", exc_info=True)
 
     def delete(self, uuid):
         data = Tokens.parser.parse_args()
-        print("OAuth token is:", data['oauth_token'])
+        logger.info("OAuth token is: {}".format(data['oauth_token']))
         if not TokensModel.find_by_uuid(uuid, "device_store"):
+            logger.error("Request with UUID: '{}' doesn't exists.".format(uuid))
             return {'message': "Request with UUID: '{}' doesn't exists.".format(uuid)}, 404
 
         connection = sqlite3.connect('data.db')
@@ -1018,7 +865,7 @@ class Tokens(Resource):
 
         connection.commit()
         connection.close()
-
+        logger.info("Request with UUID: '{}' is deleted.".format(uuid))
         return {'message': "Request with UUID: '{}' is deleted.".format(uuid)}
 
 
@@ -1030,71 +877,86 @@ class DeregisterTokens(Resource):
                         help="This field cannot be blank."
                         )
 
+    @jwt_required()
     def post(self, uuid):
         data = Tokens.parser.parse_args()
         try:
             rows = TokensModel.find_by_uuid_column(uuid, "device_store", "ipaddr")
 
-        except:
+        except Exception as e:
+            logger.error(e)
+            logger.error("Data search operation failed!", exc_info=True)
             return {"message": "Data search operation failed!"}, 500
 
         if rows:
             try:
-                print("Starting Token de-registration threads...")
+                logger.info("Starting Token de-registration threads...")
                 Tokens.create_threads(rows, "deregisterToken", uuid, data['oauth_token'])
                 response = {
                     'uuid': uuid,
                     'status': 'Tokens de-registration process started!'
                 }
+                logger.info(response)
                 return response, 201
-            except:
+            except Exception as e:
+                logger.error(e)
+                logger.error("Tokens de-registration process failed!", exc_info=True)
                 {"message": "Tokens de-registration process failed!"}, 500
         else:
+            logger.error("No devices found from request UUID!", exc_info=True)
             return {"message": "No devices found from request UUID!"}, 400
 
 
 class TokensStatus(Resource):
-    # @jwt_required()
+    @jwt_required()
     def post(self, uuid, page):
         data = Tokens.parser.parse_args()
-        print("OAuth token is:", data['oauth_token'])
-        sl_token = ""
+        logger.info("OAuth token is: {}".format(data['oauth_token']))
 
         try:
             rows_uuid = TokensModel.find_by_uuid_column(uuid, "device_store", "ipaddr")
-        except:
+        except Exception as e:
+            logger.error(e)
+            logger.error("Data search operation failed!", exc_info=True)
             return {"message": "Data search operation failed!"}, 500
 
         if rows_uuid:
             try:
-                print("Starting registration status check threads...")
+                logger.info("Starting registration status check threads...")
                 Tokens.create_threads(rows_uuid, "checkStatus", uuid, data['oauth_token'])
-            except:
+            except Exception as e:
+                logger.error(e)
+                logger.error("Tokens status check process failed!", exc_info=True)
                 {"message": "Tokens status check process failed!"}, 500
         else:
+            logger.error("No devices found from request UUID!")
             return {"message": "No devices found from request UUID!"}, 400
 
         config.NO_OF_DEVICES = len(rows_uuid)
-        config.NO_OF_PAGES = ceil(config.NO_OF_DEVICES/10)
-        print("Pagination: UUID for this request is:", uuid)
-        print("Pagination: Total number of pages:", config.NO_OF_PAGES)
-        print("Pagination: Page number requested is:", page)
+        config.NO_OF_PAGES = ceil(config.NO_OF_DEVICES / 10)
+        logger.info("Pagination: UUID for this request is: {}".format(uuid))
+        logger.info("Pagination: Total number of pages: {}".format(config.NO_OF_PAGES))
+        logger.info("Pagination: Page number requested is: {}".format(page))
 
         if page < 1 or page > config.NO_OF_PAGES:
+            logger.error("Page doesn't exists!")
             return {'message': "Page doesn't exists!"}, 400
         try:
             rows = TokensModel.find_by_uuid_slice(uuid, page, "device_status_store")
-        except:
+        except Exception as e:
+            logger.error(e)
+            logger.error("Data search operation failed!", exc_info=True)
             return {"message": "Data search operation failed!"}, 500
 
         devices_status = []
         for row in rows:
             devices_status.append({'ipaddr': row[1], 'username': row[2], 'password': row[3], 'sa_name': row[4],
                                    'va_name': row[5], 'domain': row[6], 'status': row[7]})
-        print("==>> Printing devices from within get method for resource: Tokens <<==")
-        print(devices_status)
+        logger.info("==>> Printing devices from within get method for resource: Tokens <<==")
+        logger.info(devices_status)
         if rows:
             return {'uuid': uuid,
                     'totalpages': config.NO_OF_PAGES,
                     'devices': devices_status}
+        logger.error("Request with UUID: '{}' not found while during Pagination!".format(uuid))
         return {"message": "Request with UUID: '{}' not found while during Pagination!".format(uuid)}, 404

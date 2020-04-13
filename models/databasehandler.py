@@ -25,6 +25,7 @@ del(dbmgr)
 
 import sqlite3
 
+
 class databasehandler(object):
     def __init__(self, db="data.db"):
         self.conn = sqlite3.connect(db)
@@ -37,4 +38,3 @@ class databasehandler(object):
 
     def __del__(self):
         self.conn.close()
-

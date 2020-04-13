@@ -14,8 +14,12 @@
 # or implied.
 
 from flask_restful import Resource
+from models.sl_logger import SlLogger
+
+logger = SlLogger.get_logger(__name__)
 
 
 class Index(Resource):
     def get(self):
+        logger.info("Welcome to Smart Licensing App!")
         return {"message": "Welcome to Smart Licensing App!"}

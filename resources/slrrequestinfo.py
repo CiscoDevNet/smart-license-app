@@ -13,35 +13,32 @@
 # IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
+
 from flask_restful import Resource
 from models.slr import slr
 from models.tokens import TokensModel
+from flask_jwt import jwt_required
+from models.sl_logger import SlLogger
 
-slr_req_tbl = "slr_request_code_tbl"
-slr_author_tbl = "slr_author_code_tbl"
-database_err = {"message": "Data search operation failed!"}
-s_start = "Status Started"
-s_done = "Status Done"
-s_authc_fail = "Status Authc Fail"
-s_prompt = "Status Prompt Missing"
-status_complete = {"status": s_done}
-status_progress = {"status": "Status In Progress"}
+logger = SlLogger.get_logger(__name__)
 
 
-class slrrequestinfo(Resource):
+class SlrRequestInfo(Resource):
     def __init__(self):
         self.slr = slr("", "", "")
-        pass;
+        pass
 
     def __del__(self):
-        del(self.slr)
-        pass;
+        del self.slr
+        pass
 
+    @jwt_required()
     def get(self, uuid):
         try:
             rows = TokensModel.find_by_uuid(uuid, "upload_info_store")
         except Exception as e:
             print(e)
-            return database_err, 500
+            logger.error({"message": "Data search operation failed!"}, exc_info=True)
+            return {"message": "Data search operation failed!"}, 500
 
         return {'status': rows[0][5]}, 201

@@ -93,7 +93,7 @@ class SlrRequestCode(Resource):
                     if dlc_required == "True":
                         dlc_process_status = SlrRequestCode.check_dlc_status_on_device(device_ip, username, password,
                                                                                        dlc_proc_stat_cmd)
-                        if dlc_process_status != '' and dlc_process_status == 'Not Complete':
+                        if dlc_process_status != '' and dlc_process_status != 'Not Complete':
                             dlc_conversion_data = SlrRequestCode.execute_dlc_cli(device_ip, username, password,
                                                                                          dlc_conversion_command)
                             if dlc_conversion_data != '':

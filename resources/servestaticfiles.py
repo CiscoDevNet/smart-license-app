@@ -13,13 +13,17 @@
 # IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
+
 from flask import request, send_from_directory
 from flask_restful import Resource
+from models.sl_logger import SlLogger
+
+logger = SlLogger.get_logger(__name__)
 
 
 class Serveslcsv(Resource):
     def get(self):
-        print("Now in Servslcsv class...")
+        logger.info("Now in Servslcsv class...")
         return send_from_directory('frontend/build', request.path[1:])
 
 

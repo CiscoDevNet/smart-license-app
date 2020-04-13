@@ -14,22 +14,30 @@
 # or implied.
 
 from flask_restful import Resource
+from flask_jwt import jwt_required
 import urllib3
 import config
 from models.tokens import TokensModel
+from models.sl_logger import SlLogger
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
+logger = SlLogger.get_logger(__name__)
+
+
 class Registrations(Resource):
 
-    # @jwt_required()
+    @jwt_required()
     def get(self):
         # Return last 10 registration requests executed
-        print("In class registrations - User ID:", config.USER_ID)
+        logger.info("In class registrations - User ID: {}".format(config.USER_ID))
+
         try:
             rows = TokensModel.find_last_records(config.USER_ID, "upload_info_store", "timestamp")
-        except:
+        except Exception as e:
+            logger.error(e)
+            logger.error('Data search operation failed!')
             return {"message": "Data search operation failed!"}, 500
 
         devices = []
@@ -37,9 +45,10 @@ class Registrations(Resource):
         for row in rows:
             devices.append({'uuid': row[0], 'filename': row[2], 'registration_type': row[3], 'timestamp': row[4],
                             'status': row[5]})
-        print("==>> Printing devices from within get method for resource: Tokens <<==")
-        print(devices)
+        logger.info('==>> Printing devices from within get method for resource: Tokens <<==')
+        logger.info(devices)
         if rows:
             return {'message': 'Last registrations',
                     'devices': devices}
+        logger.error('Request for last 10 registrations not found!')
         return {"message": "Request for last 10 registrations not found!"}, 404

@@ -14,7 +14,6 @@
 # or implied.
 
 from math import ceil
-import config
 
 
 class Pagination(object):
@@ -41,7 +40,7 @@ class Pagination(object):
         last = 0
         for num in range(1, self.pages + 1):
             if num <= left_edge or (num > self.page - left_current - 1 and num < self.page + right_current) or \
-               num > self.pages - right_edge:
+                    num > self.pages - right_edge:
                 if last + 1 != num:
                     yield None
                 yield num
