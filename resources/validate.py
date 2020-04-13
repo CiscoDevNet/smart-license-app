@@ -13,36 +13,41 @@
 # IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
+
 import requests
 from flask_restful import Resource, reqparse
 from models.tokens import TokensModel
+from models.sl_logger import SlLogger
+
+logger = SlLogger.get_logger(__name__)
 
 
 class Validate(Resource):
-
     parser = reqparse.RequestParser()
     parser.add_argument('oauth_token',
                         type=str,
                         required=True,
                         help="This field cannot be blank."
-    )
+                        )
 
     def post(self, uuid):
         data = Validate.parser.parse_args()
         rows = TokensModel.find_by_uuid(uuid, "validation_store")
         if not rows:
+            logger.error("Request with UUID: '{}' doesn't exists.".format(uuid))
             return {'message': "Request with UUID: '{}' doesn't exists.".format(uuid)}, 404
 
         domains = TokensModel.find_by_uuid_distinct(uuid, "validation_store")
 
         for domain in domains:
-            url = "https://apmx.cisco.com/services/api/smart-accounts-and-licensing/v1/accounts/" + domain +\
+            url = "https://apmx.cisco.com/services/api/smart-accounts-and-licensing/v1/accounts/" + domain + \
                   "/customer/virtual-accounts"
             headers = {
                 "Authorization": data['oauth_token'],
                 "Content-Type": "application/json"
             }
             response = requests.request("GET", url, headers=headers)
-            print(response.json())
+            logger.info(response.json())
 
+        logger.info("success")
         return {"message": "success"}, 201

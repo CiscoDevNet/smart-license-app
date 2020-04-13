@@ -18,52 +18,79 @@ from datetime import timedelta
 from flask import Flask
 from flask_restful import Api
 from flask_cors import CORS
-
+from flask_jwt import JWT
 from resources.tokens import Tokens, TokensStatus, DeregisterTokens
 from resources.cco_authen import UserCco
+from resources.user import UserRegister
 from resources.validate import Validate
 from resources.registrations import Registrations
 from resources.servereact import Servereact
 from resources.servestaticfiles import Serveslcsv, Serveslrcsv, ServeFavicon
 from resources.file import File, Fileuploadstatus
 from create_tables import create_sql_tables
-from resources.slrgeneraterequestcode import slrgeneraterequestcode
-from resources.slrrequestcode import slrrequestcode
-from resources.slrrequestinfo import slrrequestinfo
-from resources.slrcontactcssm import slrcontactcssm
-from resources.slrauthzswitch import slrauthzswitch
+from resources.slrupdatestatus import SlrUpdateStatus
+from resources.slrrequestcode import SlrRequestCode
+from resources.slrrequestinfo import SlrRequestInfo
+from resources.slrcontactcssm import SlrContactCSSM
+from resources.slrauthswitch import SlrAuthSwitch
 from resources.slrexportrequestcodes import Exportreqcodes
 from resources.slrexportauthcodes import Exportauthcodes
 from resources.slrimportcodes import ImportCodes
-from resources.slrfetchauthcodesstatus import Fetchauthcodesstatus
+from resources.slrfetchauthcodesstatus import FetchAuthCodesStatus
+from resources.resetPassword import ResetPassword
+from resources.forgotPassword import ForgotPassword
+from security import authenticate, identity
 import platform
 import config
+from pathlib import Path
+import yaml
+from models.sl_logger import SlLogger
+
+# Fetch App secret key from config.yaml
+home = str(Path.home())
 
 app = Flask(__name__, static_folder='frontend/build/static')
+
 CORS(app)
-app.config['JWT_EXPIRATION_DELTA'] = timedelta(days=30)
-app.secret_key = 'slta'
+app.config['JWT_EXPIRATION_DELTA'] = timedelta(minutes=30)
+logger = SlLogger.get_logger("netmiko")
+logger = SlLogger.get_logger("paramiko.transport")
+
+
+try:
+    with open(home + "/config.yaml", 'r') as yamlfile:
+        cfg = yaml.load(yamlfile)
+        sec_key = cfg['secret_key']
+except Exception:
+    raise ("Secret Key not found!")
+
+app.secret_key = sec_key
 api = Api(app)
+
+jwt = JWT(app, authenticate, identity)
 
 # For frontend integration
 api.add_resource(Servereact, '/', defaults={'path': ''})
 api.add_resource(UserCco, '/authen')
+api.add_resource(ResetPassword, '/resetPassword')
+api.add_resource(ForgotPassword, '/forgotPassword')
 api.add_resource(File, '/upload')
 api.add_resource(Fileuploadstatus, '/devicesuploaded/<string:uuid>/<int:page>')
 api.add_resource(Validate, '/sl/validate/<string:uuid>')
 api.add_resource(Tokens, '/sl/tokens/<string:uuid>')
 api.add_resource(DeregisterTokens, '/sl/tokens/deregister/<string:uuid>')
 api.add_resource(TokensStatus, '/sl/tokens/status/<string:uuid>/<int:page>')
+api.add_resource(UserRegister, '/register')
 api.add_resource(Registrations, '/registrations')
-api.add_resource(slrgeneraterequestcode, '/slr/register/status/<string:uuid>/<int:page>')
-api.add_resource(slrrequestcode, '/slr/device/reqcode/<string:uuid>')
+api.add_resource(SlrUpdateStatus, '/slr/register/status/<string:uuid>/<int:page>')
+api.add_resource(SlrRequestCode, '/slr/device/reqcode/<string:uuid>')
 api.add_resource(Exportreqcodes, '/slr/exportreqcodes/<string:uuid>')
 api.add_resource(Exportauthcodes, '/slr/exportauthcodes/<string:uuid>')
 api.add_resource(ImportCodes, '/slr/importcodes')
-api.add_resource(Fetchauthcodesstatus, '/slr/import/authcodes/status/<string:uuid>')
-api.add_resource(slrrequestinfo, '/registration/status/<string:uuid>')
-api.add_resource(slrcontactcssm, '/device/cssm/authkey/<string:uuid>')
-api.add_resource(slrauthzswitch, '/slr/device/authkey/<string:uuid>')
+api.add_resource(FetchAuthCodesStatus, '/slr/import/authcodes/status/<string:uuid>')
+api.add_resource(SlrRequestInfo, '/registration/status/<string:uuid>')
+api.add_resource(SlrContactCSSM, '/device/cssm/authkey/<string:uuid>')
+api.add_resource(SlrAuthSwitch, '/slr/device/authkey/<string:uuid>')
 api.add_resource(Serveslcsv, '/SampleDevicesDetails.csv')
 api.add_resource(Serveslrcsv, '/SampleDevicesDetails-SLR.csv')
 api.add_resource(ServeFavicon, '/favicon.ico')

@@ -13,9 +13,9 @@
 # IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied.
 
-from flask_restful import Resource, reqparse
+from flask_restful import Resource
 
 
 class slr_test(Resource):
-    def get(self): 
+    def get(self):
         pass

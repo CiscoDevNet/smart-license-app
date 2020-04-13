@@ -21,3 +21,5 @@ USER_ID = ""
 ERROR = False
 REGISTRATION_NAME = ""
 OS_TYPE = ""
+UUID = ""
+
