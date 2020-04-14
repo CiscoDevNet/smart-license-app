@@ -30,6 +30,13 @@ App connects to Cisco API Server to interact with Cisco Smart Software Managemen
     api_keys:
         client_id: <client id from Mulesoft API Server application>
         client_secret: <client secret from Mulesoft API Server application>
+    secret_key: slta
+    log_level: info
+    pids:
+        router_pids: ["ISR4451-X/K9", "ISR4221/K9", "ISR4331/K9", "ISR4351/K9", 
+                    "ISR4431/K9", "ISR4321/K9", "ISR4461/K9", "ISRV", "CSR1000V","ASR1002-X"]
+        switch_pids: ["C9300-24U", "WS-C3850X-24U", "C3850-24P", "WS-C3850-24P", "WS-C3850-24T", "C9300-48T"]
+    password_key: '1346567810193450'
     ```  
   
 ---  
