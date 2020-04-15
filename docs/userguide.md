@@ -76,6 +76,13 @@ When the app is launched, user will land on App Login page.
 New user has to register first using 'Register' link.
 
  ![Register](assets/images/register.png)
+
+In case user forgets password or wants to reset password clink on 'Forgot Password' link.
+ 
+ ![Forgot Password](assets/images/forgot_password.png)
+
+On successful login, user will see App Home page.
+
  ![App Home][AppHome]
 
  
