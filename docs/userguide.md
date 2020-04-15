@@ -69,8 +69,13 @@ Note: The screenshots shown here are from Chrome browser. It will be similar for
   
 
 ## App Home
-When the app is launched, user will land on App Home.  
+When the app is launched, user will land on App Login page. 
 
+ ![App Login](assets/images/login.png)
+
+New user has to register first using 'Register' link.
+
+ ![Register](assets/images/register.png)
  ![App Home][AppHome]
 
  
