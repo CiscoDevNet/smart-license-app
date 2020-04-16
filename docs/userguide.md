@@ -375,6 +375,16 @@ When all the authorization codes applied to devices, the status will change to c
 
 Now all 4 SLR steps are completed for the given devices. Log on to [CSSM](https://software.cisco.com) to see the License Reservations under the given SA and VA.
 
+When DLC is executed on the device and if DLC is successful, the status will change to 'DLC Success and Completed'.
+
+![SLR DLC Success](assets/images/slrdlccomplete.png)
+
+If DLC fails on the device for some reason but SLR goes through, the status will change to 'DLC Failed and SLR Successful'.
+
+![SLR DLC Failed](assets/images/slrdlcfailed.png)
+
+Log on to [CSSM](https://software.cisco.com) to see the Conversion History under the given SA and VA.
+
 ### SLR - File Export/Import Option
 User needs to do the following to perform the SLR-Disconnected Network - File Export/Import Option:
 * 2 Instances of App - App needs to be installed on 2 Computers
@@ -592,6 +602,15 @@ When all the authorization codes applied to devices, the status will change to c
 
 Now all 4 SLR steps are completed for the given devices. Log on to [CSSM](https://software.cisco.com) to see the License Reservations under the given SA and VA.
 
+When DLC is executed on the device and if DLC is successful, the status will change to 'DLC Success and Completed'.
+
+![SLR DLC Success](assets/images/slrdlccomplete.png)
+
+If DLC fails on the device for some reason but SLR goes through, the status will change to 'DLC Failed and SLR Successful'.
+
+![SLR DLC Failed](assets/images/slrdlcfailed.png)
+
+Log on to [CSSM](https://software.cisco.com) to see the Conversion History under the given SA and VA.
 ## Previous Registrations
 Previous registrations will be shown in the bottom of the 'Home'.  
 ![App Home][AppHome]
