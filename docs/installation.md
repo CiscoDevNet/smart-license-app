@@ -16,14 +16,16 @@ This is common for all platforms, must be performed once per application install
 
 App connects to Cisco API Server to interact with Cisco Smart Software Management(CSSM). OAuth is enabled on Cisco API Server to provide access to Smart Licensing APIs. This app needs to get registered with API Server's Smart Licensing API App. 
 
-1. To register and get client ID and secret, click on [Mulesoft - Cisco API Server](https://anypoint.mulesoft.com/apiplatform/apx/#/portals/organizations/1c92147b-332d-4f44-8c0e-ad3997b5e06d/apis/5418104/versions/102456/pages/309235)
+1. To register and get client ID and secret, click on [Mulesoft - Cisco API Server](https://anypoint.mulesoft.com/apiplatform/apx#/portals/organizations/1c92147b-332d-4f44-8c0e-ad3997b5e06d/apis/5418104/versions/102456/pages/425744)
   
     The link has instructions to register a new application.
 
     * Use 'Smart_Licensing_App' as the name of the app
-    * Select only 'Resource Owner Grant' type from the options for OAuth grant type.
+    * Select 'Resource Owner Grant' and 'Client Credentials Grant' type from the options for OAuth grant type.
 
-2. Once the app is registered with MuleSoft, user will get an email with application details, that includes client ID and secret, then **user needs to send an email to 'smart-operations@cisco.com' to get access to API server**. It may take **12-24 hrs** to get the access enabled after user gets an email confirmation.
+2.A confirmation will appear upon successful application registration. Also, an email notification will be sent as confirmation to the email id(s) mentioned while submitting the request. Please note down the Client Id & Secret. These will be used to generate the OAuth 2.0 Bearer token to access APIs.
+
+Important -The Client Id & Secret generated will be ready to use immediately. While making API call if you get 401 please allow another 30 mins while the Client Id propagates to all the availability zones. If you have any questions or concerns please reach out to operations team at smart-operations@cisco.com
   
     A 'config.yaml' file needs to created with the following content and place it in the user's home directory in the computer where the app is going to be installed.
     ```yaml
