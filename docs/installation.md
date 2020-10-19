@@ -23,12 +23,12 @@ App connects to Cisco API Server to interact with Cisco Smart Software Managemen
     * Use 'Smart_Licensing_App' as the name of the app
     * Select 'Resource Owner Grant' and 'Client Credentials Grant' type from the options for OAuth grant type.
 
-2.A confirmation will appear upon successful application registration. Also, an email notification will be sent as confirmation to the email id(s) mentioned while submitting the request. Please note down the Client Id & Secret. These will be used to generate the OAuth 2.0 Bearer token to access APIs.
+2. A confirmation will appear upon successful application registration. Also, an email notification will be sent as confirmation to the email id(s) mentioned while submitting the request. Please note down the Client Id & Secret. These will be used to generate the OAuth 2.0 Bearer token to access APIs.
 
 Important -The Client Id & Secret generated will be ready to use immediately. While making API call if you get 401 please allow another 30 mins while the Client Id propagates to all the availability zones. If you have any questions or concerns please reach out to operations team at smart-operations@cisco.com
-  
-    A 'config.yaml' file needs to created with the following content and place it in the user's home directory in the computer where the app is going to be installed.
-    ```yaml
+ 
+ A 'config.yaml' file needs to created with the following content and place it in the user's home directory in the computer where the app is going to be installed. 
+```yaml
     api_keys:
         client_id: <client id from Mulesoft API Server application>
         client_secret: <client secret from Mulesoft API Server application>
@@ -39,7 +39,7 @@ Important -The Client Id & Secret generated will be ready to use immediately. Wh
                     "ISR4431/K9", "ISR4321/K9", "ISR4461/K9", "ISRV", "CSR1000V","ASR1002-X"]
         switch_pids: ["C9300-24U", "WS-C3850X-24U", "C3850-24P", "WS-C3850-24P", "WS-C3850-24T", "C9300-48T"]
     password_key: '1346567810193450'
-    ```  
+```  
   
 ---  
 ### Package Dependencies - For all platform
