@@ -9,7 +9,7 @@ cffi==1.12.3
 chardet==3.0.4
 Click==7.0
 contextlib2==0.5.5
-cryptography==2.7
+cryptography==3.2
 Flask==1.1.1
 Flask-Bcrypt==0.7.1
 Flask-Cors==3.0.8
