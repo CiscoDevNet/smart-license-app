@@ -180,7 +180,7 @@ class SlrContactCSSM(Resource):
                 msg = response.json()
                 logger.info(msg['status'])
                 if msg['status'] == "ERROR":
-                    status = "Fail: " + response.json()['statusMessage']
+                    status = "Fail: " + response.json()['authorizationCodes'][0]['statusMessage']
                 else:
                     status = "Completed"
             except Exception as e:
@@ -258,13 +258,14 @@ class SlrContactCSSM(Resource):
                     for item in response["devices"]:
                         conversion_status = "dlc_" + item["conversionStatus"].lower()
                         udi_pid = item["sudi"]["udiPid"]
-                        uuid = item["sudi"]["uuid"]
                         device_ip = TokensModel.find_device_ip(uuid,udi_pid)
                         if conversion_status != "dlc_in_progress":
                             TokensModel.insert_dlc_status(uuid, device_ip, conversion_status)
                         logger.info("**********DLC conversion status******")
                         logger.info(conversion_status)
                         if conversion_status == "dlc_convert_failed":
+                            logger.info("DLC Failed")
+                            logger.info(response)
                             break
                 except Exception as e:
                     logger.error(e)

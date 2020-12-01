@@ -33,9 +33,7 @@ SLR_REQUEST_CODE_TABLE_NAME = "slr_request_code_tbl"
 # List of strings for request token command nad request UDI command
 req_token_command = ["license smart reservation", "end", "license smart reservation request local"]
 req_udi_command = ["end", "sh license tech support | i Entitlement|Count"]
-dlc_conversion_command = "show license data conversion | i conversion_data"
-dlc_proc_stat_cmd = "show platform software license dlc | i DLC Process Status"
-dlc_conversion_stat_cmd = "show platform software license dlc | i DLC Conversion Status"
+dlc_conversion_command = "show license data conversion | i conversion_string"
 
 logger = SlLogger.get_logger(__name__)
 
@@ -91,17 +89,14 @@ class SlrRequestCode(Resource):
                 result_lic_count = ""
                 try:
                     if dlc_required == "True":
-                        dlc_process_status = SlrRequestCode.check_dlc_status_on_device(device_ip, username, password,
-                                                                                       dlc_proc_stat_cmd)
-                        if dlc_process_status != '' and dlc_process_status == 'Not Complete':
-                            dlc_conversion_data = SlrRequestCode.execute_dlc_cli(device_ip, username, password,
-                                                                                         dlc_conversion_command)
-                            if dlc_conversion_data != '':
-                                logger.info("DLC_conversion_data")
-                                logger.info(type(dlc_conversion_data))
-                                logger.info(dlc_conversion_data)
-                                SlrRequestCode.generate_dlc_data_dict(device_ip, dlc_conversion_data, va)
-                                SlrRequestCode.insert_dlc_data_to_table(uuid, device_ip, dlc_conversion_data)
+                        dlc_conversion_data = SlrRequestCode.execute_dlc_cli(device_ip, username, password,
+                                                                             dlc_conversion_command)
+                        if dlc_conversion_data != '':
+                            logger.info("DLC_conversion_data")
+                            logger.info(type(dlc_conversion_data))
+                            logger.info(dlc_conversion_data)
+                            SlrRequestCode.generate_dlc_data_dict(device_ip, dlc_conversion_data, va)
+                            SlrRequestCode.insert_dlc_data_to_table(uuid, device_ip, dlc_conversion_data)
                     lic_rows = s.find_by_uuid_ipaddr(uuid, SLR_REQUEST_CODE_TABLE_NAME, device_ip)
                     device_license = s.get_license(lic_rows[0])
                     if device_license is None:
@@ -229,31 +224,6 @@ class SlrRequestCode(Resource):
         net_connect.disconnect()
         return output
 
-    @classmethod
-    def check_dlc_status_on_device(cls, device_ip, username, password, dlc_proc_stat_cmd):
-        device = {
-            'device_type': 'cisco_xe',
-            'ip': device_ip,
-            'username': username,
-            'password': password,
-            "global_delay_factor": 0.1,
-        }
-        dlc_process_status = ""
-        logger.info("DLC Process Status Cli:")
-        logger.info(dlc_proc_stat_cmd)
-        try:
-            net_connect = ConnectHandler(**device)
-            device_prompt = net_connect.find_prompt()
-
-            logger.info("Starting DLC CLI configuration process on device: {}".format(device_prompt))
-            if device_prompt:
-                dlc_process_status = net_connect.send_command(dlc_proc_stat_cmd)
-            net_connect.disconnect()
-        except Exception as e:
-            print(e)
-        if dlc_process_status == '':
-            return ''
-        return dlc_process_status.split(':')[1].strip()
 
     @classmethod
     def execute_dlc_cli(cls, device_ip, username, password, dlc_cli):
@@ -276,17 +246,9 @@ class SlrRequestCode(Resource):
                 logger.info("DLC cli output")
                 logger.info(type(dlc_output))
                 logger.info(dlc_output)
-                if dlc_output == '{"conversion_data":[]}':
-                    dlc_conversion_data = ''
-                else:
-                    dlc_conversion_data = dlc_output.split("conversion_data")
-                    dlc_conversion_data = dlc_conversion_data[1]
-                    dlc_conversion_data = dlc_conversion_data[3:-1]
-                    logger.info("DLC conversion data:")
-                    '# converting dlc conversion data to dictionary'
-                    dlc_conversion_data = json.loads(dlc_conversion_data)
-                    logger.info(dlc_conversion_data)
-                    logger.info(type(dlc_conversion_data))
+                if dlc_output != '':
+                    dlc_output = json.loads(dlc_output)
+                    dlc_output = dlc_output[0]
             else:
                 logger.info("Not able to get device prompt for ip address: {}".format(device_ip))
 
@@ -294,7 +256,7 @@ class SlrRequestCode(Resource):
         except Exception as e:
             logger.error("Connection to the device Failed")
             logger.error(e)
-        return dlc_conversion_data
+        return dlc_output
 
     @classmethod
     def generate_dlc_data_dict(cls, device_ip, dlc_conversion_data, va_name):
@@ -302,7 +264,6 @@ class SlrRequestCode(Resource):
         sudi_replace_keys = {'udi_pid': 'udiPid', 'udi_serial_number': 'udiSerialNumber'}
         sudi_dict = dict((sudi_replace_keys[key], value) for (key, value) in dlc_conversion_data['sudi'].items())
         dlc_data_dict.update({'sudi': sudi_dict})
-        dlc_data_dict['sudi'].update({'uuid': config.UUID})
         dlc_data_dict['sudi'].update({'device_ip': device_ip})
         dlc_data_dict.update({'softwareTagIdentifier': dlc_conversion_data['software_tag_identifier']})
         dlc_data_dict.update({'conversionLines': dlc_conversion_data['conversion_lines']})

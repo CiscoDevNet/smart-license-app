@@ -87,32 +87,39 @@ class SlrAuthSwitch(Resource):
     @classmethod
     def send_authorize_information(cls, device_ip, username, password, cli, authz_info, tftp_server, tftp_loc, uuid):
         s = slr("", "", "")
-        client = tftpy.TftpClient(tftp_server, 69)
-        file_name = device_ip + ".txt"
-        dest_file = dest_dir + file_name
         try:
-            f = open(dest_file, "w+")
-            logger.info(authz_info)
-            f.write(authz_info)
-            f.close()
-            client.upload(file_name, dest_file)
-            cli.append("lic smart reservation install file tftp://" + tftp_server + "/" + file_name)
-            logger.info(cli)
-            SlrAuthSwitch.config_commands(device_ip, username, password, cli)
-            #if dlc_status_rows is not empty means dlc is performed
-            dlc_status_rows = TokensModel.get_dlc_status(uuid, device_ip)
-            if dlc_status_rows:
-                dlc_status = dlc_status_rows[0][2]
-                if dlc_status == "dlc_convert_success":
-                    s.update_status(SLR_REQUEST_CODE_TABLE_NAME, uuid, device_ip, "DLC Success and Completed", "step3")
+            logger.info("Trying to connect to tftp server:{}".format(tftp_server))
+            client = tftpy.TftpClient(tftp_server, 69)
+            file_name = device_ip + ".txt"
+            dest_file = dest_dir + file_name
+            try:
+                f = open(dest_file, "w+")
+                logger.info(authz_info)
+                f.write(authz_info)
+                f.close()
+                logger.info("Trying to upload file:{}".format(file_name))
+                client.upload(file_name, dest_file)
+                cli.append("lic smart reservation install file tftp://" + tftp_server + "/" + file_name)
+                logger.info(cli)
+                SlrAuthSwitch.config_commands(device_ip, username, password, cli)
+                #if dlc_status_rows is not empty means dlc is performed
+                dlc_status_rows = TokensModel.get_dlc_status(uuid, device_ip)
+                if dlc_status_rows:
+                    dlc_status = dlc_status_rows[0][2]
+                    if dlc_status == "dlc_convert_success":
+                        s.update_status(SLR_REQUEST_CODE_TABLE_NAME, uuid, device_ip, "DLC Success and Completed", "step3")
+                    else:
+                        s.update_status(SLR_REQUEST_CODE_TABLE_NAME, uuid, device_ip, "DLC Failed and SLR Successful",
+                                        "step3")
                 else:
-                    s.update_status(SLR_REQUEST_CODE_TABLE_NAME, uuid, device_ip, "DLC Failed and SLR Successful",
-                                    "step3")
-            else:
-                s.update_status(SLR_REQUEST_CODE_TABLE_NAME, uuid, device_ip, "Completed", "step3")
+                    s.update_status(SLR_REQUEST_CODE_TABLE_NAME, uuid, device_ip, "Completed", "step3")
+            except Exception as e:
+                print("file upload failed:", e)
+                logger.info("Failed uploading file:{}".format(file_name))
+                s.update_status(SLR_REQUEST_CODE_TABLE_NAME, uuid, device_ip, str(e).split(":")[0], "step3")
         except Exception as e:
-            print(e)
-            s.update_status(SLR_REQUEST_CODE_TABLE_NAME, uuid, device_ip, str(e).split(":")[0], "step3")
+            logger.info("Failure connecting to tftp server:{}".format(tftp_server))
+            print("Connection to tftp server failed:", e)
 
         rows = s.find_by_step_status(SLR_REQUEST_CODE_TABLE_NAME, uuid, "Started", "step3")
         if len(rows) == 0:

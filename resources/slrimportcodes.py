@@ -355,7 +355,6 @@ class ImportCodes(Resource):
                                                                                 [{'sudi': {
                                                                                     'udiPid': And(str,len),
                                                                                     'udiSerialNumber': And(str,len),
-                                                                                    'uuid': And(str,len),
                                                                                     'device_ip':  And(str,len)
                                                                                 },
                                                                                   'softwareTagIdentifier': And(str,len),
@@ -363,7 +362,7 @@ class ImportCodes(Resource):
                                                                                       'conversionType': And(str,len),
                                                                                       'conversionEncodingType': And(str,len),
                                                                                       'conversionString' : And(str,len),
-                                                                                      'conversionCount': And(Use(int), lambda n: 1 <= n <= 100)
+                                                                                      'conversionCount': And(Use(int), lambda n: 0 <= n <= 100)
                                                                                   }]}],
                                                                             'name': And(str,len)}]}
                                            })
