@@ -27,7 +27,7 @@ numpy==1.17.2
 packaging==19.2
 pandas==0.25.1
 pandas-schema==0.3.4
-paramiko==2.6.0
+paramiko==2.10.1
 pluggy==0.13.0
 py==1.8.0
 pycparser==2.19
